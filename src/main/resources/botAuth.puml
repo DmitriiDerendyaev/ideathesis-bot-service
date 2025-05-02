@@ -1,0 +1,53 @@
+@startuml
+title Сценарий авторизации в Telegram Bot
+skinparam sequenceMessageAlign center
+skinparam ParticipantPadding 20
+skinparam BoxPadding 10
+
+actor "Студент" as user
+participant "TelegramBot" as bot
+participant "BotService" as service
+participant "AuthService" as auth
+database "UserDB" as db
+
+autonumber
+
+user -> bot : Команда /start
+bot -> service : onUpdateReceived(/start)
+service -> user : Отправка приветственного сообщения\nи запрос авторизации
+
+user -> bot : Вводит логин и пароль
+bot -> service : onUpdateReceived(credentials)
+
+alt Неверный формат данных
+    service -> user : "Неверный формат ввода.\nВведите логин и пароль через пробел"
+    return
+end
+
+service -> auth ++ : POST /auth {login, password, client_type: "telegram"}
+
+alt Ошибка соединения
+    auth --> service -- : 503 Service Unavailable
+    service -> user : "Сервис авторизации недоступен"
+    return
+else Неверные данные
+    auth --> service -- : 401 Unauthorized
+    service -> user : "Неверные учетные данные"
+    return
+end
+
+auth -> db : Проверка пользователя
+db --> auth : UserData
+
+auth --> service -- : 200 OK {jwt, user_data}
+service -> service : Сохранение состояния пользователя
+
+alt Первая авторизация
+    service -> user : "Добро пожаловать! Ваш профиль:\nИмя: {name}\nГруппа: {group}"
+else Повторная авторизация
+    service -> user : "С возвращением, {name}!"
+end
+
+service -> user : Запрос компетенций (следующий этап)
+
+@enduml

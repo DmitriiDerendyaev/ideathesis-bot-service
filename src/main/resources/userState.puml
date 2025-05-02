@@ -1,0 +1,28 @@
+@startuml
+title Диаграмма состояний UserState (авторизация)
+skinparam monochrome true
+skinparam defaultFontName Arial
+
+[*] --> UNAUTHORIZED : Начальное состояние
+
+UNAUTHORIZED --> AWAITING_CREDENTIALS : /start
+AWAITING_CREDENTIALS --> PROCESSING_AUTH : Получены credentials
+
+PROCESSING_AUTH --> AUTHORIZED : Успешная авторизация
+PROCESSING_AUTH --> AWAITING_CREDENTIALS : Ошибка авторизации
+
+AUTHORIZED --> ASK_COMPETENCIES : Переход к сбору данных
+ASK_COMPETENCIES --> [*] : Завершение диалога
+
+note right of AWAITING_CREDENTIALS
+  Бот ожидает ввода
+  логина и пароля
+  от пользователя
+end note
+
+note left of AUTHORIZED
+  Пользователь аутентифицирован,
+  JWT сохранен,
+  можно запрашивать доп. данные
+end note
+@enduml

@@ -1,0 +1,21 @@
+app:
+  values:
+    api:
+      giga-chat:
+        base-url:
+          auth: "https://ngw.devices.sberbank.ru:9443"
+          chat: "https://gigachat.devices.sberbank.ru"
+        chat-settings:
+          scope: "GIGACHAT_API_PERS"
+        auth-key: "ZjBjZmU2Y2EtMTUwYi00ZWIzLWE3MzEtOGE2OGRkNjljYzNkOjU0ZDIzOTM1LTlmMDMtNDg0Ni1iNmEyLTQxZTc2NGRhYTA3OA=="
+    bot:
+      token: "6337075396:AAHdA3BJUlTRemUY1UVodYs_eYr-5L4m5OE"
+    auth:
+      service-url: "http://auth-service:8081"
+
+spring:
+  application:
+    name: ideathesis-bot-service
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false

@@ -19,3 +19,8 @@ spring:
   jackson:
     serialization:
       write-dates-as-timestamps: false
+
+telegram:
+  bot:
+    token: '6337075396:AAHdA3BJUlTRemUY1UVodYs_eYr-5L4m5OE'
+    username: '@horoscopeDaily_V2Bot'

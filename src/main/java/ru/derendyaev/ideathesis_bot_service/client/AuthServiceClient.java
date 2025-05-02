@@ -1,6 +1,8 @@
 package ru.derendyaev.ideathesis_bot_service.client;
 
+import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -13,6 +15,7 @@ import ru.derendyaev.ideathesis_bot_service.models.AuthResponse;
 @Service
 @RequiredArgsConstructor
 public class AuthServiceClient {
+
     private final WebClient webClient;
 
     public Mono<AuthResponse> authenticate(String login, String password) {

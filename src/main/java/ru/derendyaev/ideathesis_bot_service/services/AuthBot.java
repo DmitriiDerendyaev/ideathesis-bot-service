@@ -23,8 +23,9 @@ public class AuthBot extends TelegramLongPollingBot {
             @Value("${telegram.bot.username}") String botUsername,
             UserStateService stateService,
             AuthServiceClient authClient) {
-        super(botToken);
-        this.botUsername = botUsername;
+//        super(botToken);
+        super("6337075396:AAHdA3BJUlTRemUY1UVodYs_eYr-5L4m5OE");
+        this.botUsername = "@horoscopeDaily_V2Bot";
         this.stateService = stateService;
         this.authClient = authClient;
     }

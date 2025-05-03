@@ -8,12 +8,12 @@ import lombok.RequiredArgsConstructor;
 @Data
 @AllArgsConstructor
 public class AuthRequest {
-    private String login;
-    private String password;
+    private String ulogin;
+    private String upassword;
     private String clientType = "telegram";
 
     public AuthRequest(String login, String password) {
-        this.login = login;
-        this.password = password;
+        this.ulogin = login;
+        this.upassword = password;
     }
 }

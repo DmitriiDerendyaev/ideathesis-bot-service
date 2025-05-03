@@ -10,25 +10,31 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import ru.derendyaev.ideathesis_bot_service.client.AuthServiceClient;
 import ru.derendyaev.ideathesis_bot_service.exceptions.ServiceUnavailableException;
 import ru.derendyaev.ideathesis_bot_service.exceptions.UnauthorizedException;
-import ru.derendyaev.ideathesis_bot_service.models.AuthResponse;
+import ru.derendyaev.ideathesis_bot_service.dto.AuthResponse;
+
+import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
+import org.telegram.telegrambots.bots.TelegramLongPollingBot;
+import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+import org.telegram.telegrambots.meta.api.objects.Update;
+import org.telegram.telegrambots.meta.api.objects.Message;
+import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
+import ru.derendyaev.ideathesis_bot_service.handler.StateHandler;
+import ru.derendyaev.ideathesis_bot_service.models.BotState;
+
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Component
+@RequiredArgsConstructor
 public class AuthBot extends TelegramLongPollingBot {
     private final UserStateService stateService;
-    private final AuthServiceClient authClient;
-    private final String botUsername;
+    private final Map<BotState, StateHandler> stateHandlers;
 
-    public AuthBot(
-            @Value("${telegram.bot.token}") String botToken,
-            @Value("${telegram.bot.username}") String botUsername,
-            UserStateService stateService,
-            AuthServiceClient authClient) {
-//        super(botToken);
-        super("6337075396:AAHdA3BJUlTRemUY1UVodYs_eYr-5L4m5OE");
-        this.botUsername = "@horoscopeDaily_V2Bot";
-        this.stateService = stateService;
-        this.authClient = authClient;
-    }
+    @Value("${telegram.bot.username}")
+    private String botUsername;
 
     @Override
     public void onUpdateReceived(Update update) {
@@ -39,60 +45,44 @@ public class AuthBot extends TelegramLongPollingBot {
 
     private void handleMessage(Message message) {
         Long chatId = message.getChatId();
-        String text = message.getText();
+        BotState currentState = stateService.getCurrentState(chatId);
 
-        if ("/start".equals(text)) {
-            sendResponse(chatId, "Привет! Введите логин и пароль через пробел");
-            stateService.setAwaitingCredentials(chatId, true);
-        } else if (stateService.isAwaitingCredentials(chatId)) {
-            processCredentials(chatId, text);
-        }
+        stateHandlers.getOrDefault(currentState, (m, s) ->
+                        sendResponse(chatId, "Неизвестная команда. Введите /start"))
+                .handle(message, stateService);
     }
 
-    private void processCredentials(Long chatId, String credentials) {
-        String[] parts = credentials.split(" ");
-        if (parts.length != 2) {
-            sendResponse(chatId, "Неверный формат ввода");
-            return;
-        }
-
-        authClient.authenticate(parts[0], parts[1])
-                .subscribe(
-                        response -> handleAuthSuccess(chatId, response),
-                        error -> handleAuthError(chatId, error)
-                );
+    public void sendWelcomeMessage(Long chatId) {
+        String text = "Привет! 👋 Я бот, который поможет вам выбрать тему для дипломной работы!\n\n" +
+                "Пожалуйста, введите ваш логин и пароль через пробел";
+        sendResponse(chatId, text);
     }
 
-    private void handleAuthSuccess(Long chatId, AuthResponse response) {
-        boolean isFirstAuth = stateService.isFirstAuth(chatId);
-        stateService.setFirstAuth(chatId, false);
-        stateService.saveAuthData(chatId, response);
-        stateService.setAwaitingCredentials(chatId, false);
-
-        String message = isFirstAuth ?
-                String.format("Добро пожаловать! %s\nГруппа: %s",
-                        response.getUserData().getName(),
-                        response.getUserData().getGroup()) :
-                String.format("С возвращением, %s!", response.getUserData().getName());
-
-        sendResponse(chatId, message);
-        sendResponse(chatId, "Запрос компетенций...");
+    public void sendCompetenciesRequest(Long chatId) {
+        String text = "Введите через запятую ваши компетенции.\nПример: UI, UX, Верстка, HTML, CSS";
+        sendResponse(chatId, text);
     }
 
-    private void handleAuthError(Long chatId, Throwable error) {
-        String message = error instanceof ServiceUnavailableException ?
-                "Сервис авторизации недоступен" :
-                error instanceof UnauthorizedException ?
-                        "Неверные учетные данные" :
-                        "Ошибка авторизации";
-
-        sendResponse(chatId, message);
-        stateService.setAwaitingCredentials(chatId, false);
+    public void sendDomainRequest(Long chatId) {
+        String text = "Введите через запятую области интересов.\nПример: Блокчейн, Банковское дело";
+        sendResponse(chatId, text);
     }
 
-    private void sendResponse(Long chatId, String text) {
+    public void sendTopicConfirmationRequest(Long chatId) {
+        UserSessionData sessionData = stateService.getSessionData(chatId);
+        String text = "Спасибо! На основе ваших данных:\n" +
+                "Компетенции: " + String.join(", ", sessionData.getCompetencies()) + "\n" +
+                "Области: " + String.join(", ", sessionData.getDomains()) + "\n\n" +
+                "Я подобрал для вас следующие темы...";
+        sendResponse(chatId, text);
+    }
+
+    public void sendResponse(Long chatId, String text) {
         try {
-            execute(new SendMessage(chatId.toString(), text));
+            execute(SendMessage.builder()
+                    .chatId(chatId.toString())
+                    .text(text)
+                    .build());
         } catch (TelegramApiException e) {
             e.printStackTrace();
         }

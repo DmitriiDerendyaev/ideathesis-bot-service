@@ -5,11 +5,14 @@ import lombok.Data;
 import java.util.ArrayList;
 import java.util.List;
 
+import lombok.Data;
+import ru.derendyaev.ideathesis_bot_service.dto.AuthResponse;
+
+import java.util.List;
+
 @Data
 public class UserSessionData {
-    private List<String> competencies = new ArrayList<>();
-    private List<String> domains = new ArrayList<>();
-    private String preferredTopic;
-    private List<String> suggestedTopics = new ArrayList<>();
-    private Integer currentSuggestionIndex = 0;
+    private AuthResponse auth;
+    private List<String> competencies;
+    private List<String> domains;
 }

@@ -7,11 +7,12 @@ app:
           chat: "https://gigachat.devices.sberbank.ru"
         chat-settings:
           scope: "GIGACHAT_API_PERS"
-        auth-key: "ZjBjZmU2Y2EtMTUwYi00ZWIzLWE3MzEtOGE2OGRkNjljYzNkOjU0ZDIzOTM1LTlmMDMtNDg0Ni1iNmEyLTQxZTc2NGRhYTA3OA=="
+        auth-key: "${GIGA_CHAT_AUTH_KEY}"
     bot:
-      token: "6337075396:AAHdA3BJUlTRemUY1UVodYs_eYr-5L4m5OE"
+      username: '@horoscopeDaily_V2Bot'
+      token: "${BOT_TOKEN}"
     auth:
-      service-url: "http://auth-service:8081"
+      service-url: "http://localhost:8081"
 
 spring:
   application:
@@ -19,8 +20,3 @@ spring:
   jackson:
     serialization:
       write-dates-as-timestamps: false
-
-telegram:
-  bot:
-    token: '6337075396:AAHdA3BJUlTRemUY1UVodYs_eYr-5L4m5OE'
-    username: '@horoscopeDaily_V2Bot'

@@ -14,6 +14,7 @@ target/
 .sts4-cache
 
 ### IntelliJ IDEA ###
+.gigaide/gigaide.properties
 .idea
 *.iws
 *.iml
@@ -31,3 +32,6 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### properties ###
+src/main/resources/application-local.yaml

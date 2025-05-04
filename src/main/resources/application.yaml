@@ -1,0 +1,22 @@
+app:
+  values:
+    api:
+      giga-chat:
+        base-url:
+          auth: "https://ngw.devices.sberbank.ru:9443"
+          chat: "https://gigachat.devices.sberbank.ru"
+        chat-settings:
+          scope: "GIGACHAT_API_PERS"
+        auth-key: "${GIGA_CHAT_AUTH_KEY}"
+    bot:
+      username: '@horoscopeDaily_V2Bot'
+      token: "${BOT_TOKEN}"
+    auth:
+      service-url: "http://localhost:8081"
+
+spring:
+  application:
+    name: ideathesis-bot-service
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false

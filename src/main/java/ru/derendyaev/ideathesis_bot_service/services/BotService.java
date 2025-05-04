@@ -8,36 +8,15 @@ import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
-import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import ru.derendyaev.ideathesis_bot_service.client.AuthServiceClient;
 import ru.derendyaev.ideathesis_bot_service.exceptions.ServiceUnavailableException;
 import ru.derendyaev.ideathesis_bot_service.exceptions.UnauthorizedException;
-import ru.derendyaev.ideathesis_bot_service.dto.AuthResponse;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
-import org.telegram.telegrambots.bots.TelegramLongPollingBot;
-import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
-import org.telegram.telegrambots.meta.api.objects.Update;
-import org.telegram.telegrambots.meta.api.objects.Message;
-import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
-import ru.derendyaev.ideathesis_bot_service.handler.StateHandler;
+
 import ru.derendyaev.ideathesis_bot_service.models.BotState;
 
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
-
-
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
-import org.telegram.telegrambots.bots.DefaultBotOptions;
-import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.TelegramBotsApi;
-import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
-import org.telegram.telegrambots.meta.api.objects.Message;
-import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.updatesreceivers.DefaultBotSession;
 
 @Slf4j

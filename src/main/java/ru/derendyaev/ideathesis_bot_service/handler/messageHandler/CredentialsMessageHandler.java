@@ -56,18 +56,6 @@ public class CredentialsMessageHandler implements MessageHandler {
                         log.info("Authenticated: {}", resp.getUser());
                         botServiceDelegate.getUserStateService().setState(chatId, BotState.AWAITING_COMPETENCIES);
                         botServiceDelegate.getUserStateService().saveAuth(chatId, resp);
-
-                        UserContext context = new UserContext(
-                                resp.getUser().getFirstName(),
-                                resp.getUser().getLastName(),
-                                resp.getUser().getEmail(),
-                                resp.getUser().getPhone(),
-                                resp.getUser().getUserType()
-                        );
-                        String userInfoMessage = templateService.render("user_info.mustache", context);
-                        botServiceDelegate.sendMessage(chatId, userInfoMessage, ParseMode.MARKDOWN);
-                        String competenciesMessage = templateService.render("request_competencies.mustache", context);
-                        botServiceDelegate.sendMessage(chatId, competenciesMessage, ParseMode.MARKDOWN);
                     })
                     .doOnError(UnauthorizedException.class, ex -> {
                         log.warn("Неверные учетные данные: {}", parts[0]);
@@ -77,7 +65,37 @@ public class CredentialsMessageHandler implements MessageHandler {
                         log.error("Сервис авторизации недоступен");
                         botServiceDelegate.sendMessage(chatId, "Сервис временно недоступен. Попробуйте позже.", ParseMode.NONE);
                     })
-                    .subscribe();
+                    .block();
         }
+
+        String guid = botServiceDelegate.getUserStateService().getSessionData(chatId).getAuth().getUser().getGuid();
+
+        usersServiceClient.getStudentDetails(guid)
+                .doOnNext(resp -> {
+                    log.info("Student details: {}", resp.toString());
+                    UserContext context = new UserContext(
+                            resp.getFirstName(),
+                            resp.getLastName(),
+                            resp.getStudentGroup().getName().replace("-", "\\-"),
+                            resp.getCourse().toString(),
+                            resp.getDepartment().getName(),
+                            resp.getDegreeLevel().getName()
+                    );
+
+                    String userInfoMessage = templateService.render("user_info.mustache", context);
+                    botServiceDelegate.sendMessage(chatId, userInfoMessage, ParseMode.MARKDOWN);
+                    String competenciesMessage = templateService.render("request_competencies.mustache", context);
+                    botServiceDelegate.sendMessage(chatId, competenciesMessage, ParseMode.MARKDOWN);
+                })
+                .doOnError(UnauthorizedException.class, ex -> {
+                    log.warn("Получены некорректные данные");
+                    botServiceDelegate.sendMessage(chatId, "Были введены некорректные данные.", ParseMode.NONE);
+                })
+                .doOnError(ServiceUnavailableException.class, ex -> {
+                    log.error("Сервис пользователей недоступен");
+                    botServiceDelegate.sendMessage(chatId, "Сервис временно недоступен. Попробуйте позже.", ParseMode.NONE);
+                })
+                .subscribe();
+
     }
 }

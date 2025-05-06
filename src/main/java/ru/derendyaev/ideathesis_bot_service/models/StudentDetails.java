@@ -11,6 +11,18 @@ public class StudentDetails {
     private StudentGroup studentGroup;
     private Department department;
     private DegreeLevel degreeLevel;
-    // Добавьте другие поля из примера JSON
+
+    @Override
+    public String toString() {
+        return "StudentDetails{" +
+                "guid='" + guid + '\'' +
+                ", firstName='" + firstName + '\'' +
+                ", lastName='" + lastName + '\'' +
+                ", course=" + course +
+                ", studentGroup=" + studentGroup +
+                ", department=" + department +
+                ", degreeLevel=" + degreeLevel +
+                '}';
+    }
 }
 

@@ -24,12 +24,12 @@ public class WebClientConfig {
     @Value("${app.values.users.service-url}")
     private String usersServiceUrl;
 
-    @Bean
+    @Bean("authWebClient") // Явное указание имени бина
     public WebClient authWebClient() throws SSLException {
         return createWebClient(authServiceUrl);
     }
 
-    @Bean
+    @Bean("usersWebClient") // Явное указание имени бина
     public WebClient usersWebClient() throws SSLException {
         return createWebClient(usersServiceUrl);
     }

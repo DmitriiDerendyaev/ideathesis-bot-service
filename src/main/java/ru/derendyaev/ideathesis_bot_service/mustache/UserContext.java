@@ -1,23 +1,24 @@
 package ru.derendyaev.ideathesis_bot_service.mustache;
 
+import lombok.Data;
 import lombok.Getter;
 
-@Getter
+@Data
 public class UserContext {
     // Геттеры
     private String firstName;
     private String lastName;
-    private String email;
-    private String phone;
-    private String userType;
+    private String groupName;
+    private String course;
+    private String department;
+    private String degreeLevel;
 
-    // Конструктор, геттеры и сеттеры
-    public UserContext(String firstName, String lastName, String email, String phone, String userType) {
+    public UserContext(String firstName, String lastName, String groupName, String course, String department, String degreeLevel) {
         this.firstName = firstName;
         this.lastName = lastName;
-        this.email = email;
-        this.phone = phone;
-        this.userType = userType;
+        this.groupName = groupName;
+        this.course = course;
+        this.department = department;
+        this.degreeLevel = degreeLevel;
     }
-
 }

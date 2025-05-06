@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -15,10 +16,14 @@ import ru.derendyaev.ideathesis_bot_service.dto.AuthResponse;
 
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class AuthServiceClient {
 
     private final WebClient webClient;
+
+    // Явный конструктор с @Qualifier
+    public AuthServiceClient(@Qualifier("authWebClient") WebClient webClient) {
+        this.webClient = webClient;
+    }
 
     public Mono<AuthResponse> authenticate(String login, String password) {
         return webClient.post()

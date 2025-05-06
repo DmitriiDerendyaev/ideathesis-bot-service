@@ -1,11 +1,13 @@
-package ru.derendyaev.ideathesis_bot_service.handler;
+package ru.derendyaev.ideathesis_bot_service.handler.messageHandler;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
+import ru.derendyaev.ideathesis_bot_service.handler.MessageHandler;
 import ru.derendyaev.ideathesis_bot_service.models.BotState;
 import ru.derendyaev.ideathesis_bot_service.services.BotServiceDelegate;
 import org.telegram.telegrambots.meta.api.objects.Message;
+import ru.derendyaev.ideathesis_bot_service.services.ParseMode;
 
 @Slf4j
 @Component
@@ -25,7 +27,7 @@ public class CompetenciesMessageHandler implements MessageHandler {
         botServiceDelegate.getUserStateService().getSessionData(chatId)
                 .setCompetencies(botServiceDelegate.splitList(text));
 
-        botServiceDelegate.sendMessage(chatId, "Введите области интересов через запятую.");
+        botServiceDelegate.sendMessage(chatId, "Введите области интересов через запятую.", ParseMode.HTML);
         botServiceDelegate.getUserStateService().setState(chatId, BotState.AWAITING_DOMAIN);
     }
 }

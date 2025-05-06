@@ -1,3 +1,6 @@
+server:
+  port: 8083
+
 app:
   values:
     api:
@@ -13,6 +16,8 @@ app:
       token: "${BOT_TOKEN}"
     auth:
       service-url: "http://localhost:8081"
+    users:
+      service-url: "http://localhost:8082"
 
 spring:
   application:
@@ -20,3 +25,6 @@ spring:
   jackson:
     serialization:
       write-dates-as-timestamps: false
+  mustache:
+    prefix: classpath:/templates/
+    suffix: .mustache

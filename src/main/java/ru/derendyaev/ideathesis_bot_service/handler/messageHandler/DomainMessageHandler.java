@@ -1,11 +1,13 @@
-package ru.derendyaev.ideathesis_bot_service.handler;
+package ru.derendyaev.ideathesis_bot_service.handler.messageHandler;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
+import ru.derendyaev.ideathesis_bot_service.handler.MessageHandler;
 import ru.derendyaev.ideathesis_bot_service.services.BotServiceDelegate;
 import org.telegram.telegrambots.meta.api.objects.Message;
+import ru.derendyaev.ideathesis_bot_service.services.ParseMode;
 
 @Slf4j
 @Component
@@ -29,7 +31,7 @@ public class DomainMessageHandler implements MessageHandler {
         botServiceDelegate.sendMessage(chatId,
                 String.format("Компетенции: %s\nОбласти: %s\nСпасибо! Подбираю темы...",
                         String.join(", ", session.getCompetencies()),
-                        String.join(", ", session.getDomains())));
+                        String.join(", ", session.getDomains())), ParseMode.HTML);
 
         botServiceDelegate.getUserStateService().clear(chatId);
     }

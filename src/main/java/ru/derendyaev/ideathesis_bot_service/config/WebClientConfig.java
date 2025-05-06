@@ -19,11 +19,23 @@ import javax.net.ssl.SSLException;
 public class WebClientConfig {
 
     @Value("${app.values.auth.service-url}")
-    String baseUrl;
+    private String authServiceUrl;
+
+    @Value("${app.values.users.service-url}")
+    private String usersServiceUrl;
 
     @Bean
-    public WebClient webClient() throws SSLException {
-        SslContext sslContext = null;
+    public WebClient authWebClient() throws SSLException {
+        return createWebClient(authServiceUrl);
+    }
+
+    @Bean
+    public WebClient usersWebClient() throws SSLException {
+        return createWebClient(usersServiceUrl);
+    }
+
+    private WebClient createWebClient(String baseUrl) {
+        SslContext sslContext;
         try {
             sslContext = SslContextBuilder
                     .forClient()
@@ -33,8 +45,8 @@ public class WebClientConfig {
             throw new RuntimeException(e);
         }
 
-        SslContext finalSslContext = sslContext;
-        HttpClient httpClient = HttpClient.create().secure(t -> t.sslContext(finalSslContext));
+        HttpClient httpClient = HttpClient.create()
+                .secure(t -> t.sslContext(sslContext));
 
         return WebClient.builder()
                 .baseUrl(baseUrl)

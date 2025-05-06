@@ -2,7 +2,6 @@ package ru.derendyaev.ideathesis_bot_service.client;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatusCode;
@@ -11,7 +10,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 import ru.derendyaev.ideathesis_bot_service.exceptions.ServiceUnavailableException;
 import ru.derendyaev.ideathesis_bot_service.exceptions.UnauthorizedException;
-import ru.derendyaev.ideathesis_bot_service.models.AuthRequestDto;
+import ru.derendyaev.ideathesis_bot_service.dto.AuthRequestDto;
 import ru.derendyaev.ideathesis_bot_service.dto.AuthResponse;
 
 @Slf4j

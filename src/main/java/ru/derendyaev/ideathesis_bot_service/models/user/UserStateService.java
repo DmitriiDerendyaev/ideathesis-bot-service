@@ -1,4 +1,4 @@
-package ru.derendyaev.ideathesis_bot_service.services;
+package ru.derendyaev.ideathesis_bot_service.models.user;
 
 import lombok.Data;
 import org.springframework.stereotype.Service;

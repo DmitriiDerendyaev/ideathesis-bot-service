@@ -15,6 +15,8 @@ import org.telegram.telegrambots.updatesreceivers.DefaultBotSession;
 import ru.derendyaev.ideathesis_bot_service.client.AuthServiceClient;
 import ru.derendyaev.ideathesis_bot_service.handler.MessageHandler;
 import ru.derendyaev.ideathesis_bot_service.models.BotState;
+import ru.derendyaev.ideathesis_bot_service.models.ParseMode;
+import ru.derendyaev.ideathesis_bot_service.models.user.UserStateService;
 
 import java.util.Arrays;
 import java.util.List;

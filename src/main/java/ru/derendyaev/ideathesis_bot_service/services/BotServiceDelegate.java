@@ -1,5 +1,8 @@
 package ru.derendyaev.ideathesis_bot_service.services;
 
+import ru.derendyaev.ideathesis_bot_service.models.ParseMode;
+import ru.derendyaev.ideathesis_bot_service.models.user.UserStateService;
+
 import java.util.List;
 
 public interface BotServiceDelegate {

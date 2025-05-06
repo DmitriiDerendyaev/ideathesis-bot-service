@@ -8,7 +8,7 @@ import ru.derendyaev.ideathesis_bot_service.handler.MessageHandler;
 import ru.derendyaev.ideathesis_bot_service.models.BotState;
 import ru.derendyaev.ideathesis_bot_service.services.BotServiceDelegate;
 import org.telegram.telegrambots.meta.api.objects.Message;
-import ru.derendyaev.ideathesis_bot_service.services.ParseMode;
+import ru.derendyaev.ideathesis_bot_service.models.ParseMode;
 import ru.derendyaev.ideathesis_bot_service.mustache.MustacheTemplateService;
 
 import java.util.HashMap;

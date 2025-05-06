@@ -1,4 +1,4 @@
-package ru.derendyaev.ideathesis_bot_service.models;
+package ru.derendyaev.ideathesis_bot_service.models.student;
 
 import lombok.Data;
 

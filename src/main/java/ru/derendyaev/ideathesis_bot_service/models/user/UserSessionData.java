@@ -3,7 +3,7 @@ package ru.derendyaev.ideathesis_bot_service.models.user;
 import lombok.Data;
 import java.util.List;
 
-import ru.derendyaev.ideathesis_bot_service.dto.AuthResponse;
+import ru.derendyaev.ideathesis_bot_service.dto.auth.AuthResponse;
 import ru.derendyaev.ideathesis_bot_service.models.student.StudentDetails;
 
 @Data

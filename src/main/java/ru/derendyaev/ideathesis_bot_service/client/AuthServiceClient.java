@@ -10,8 +10,8 @@ import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 import ru.derendyaev.ideathesis_bot_service.exceptions.ServiceUnavailableException;
 import ru.derendyaev.ideathesis_bot_service.exceptions.UnauthorizedException;
-import ru.derendyaev.ideathesis_bot_service.dto.AuthRequestDto;
-import ru.derendyaev.ideathesis_bot_service.dto.AuthResponse;
+import ru.derendyaev.ideathesis_bot_service.dto.auth.AuthRequestDto;
+import ru.derendyaev.ideathesis_bot_service.dto.auth.AuthResponse;
 
 @Slf4j
 @Service

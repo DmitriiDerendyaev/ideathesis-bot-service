@@ -2,7 +2,7 @@ package ru.derendyaev.ideathesis_bot_service.models.user;
 
 import lombok.Data;
 import org.springframework.stereotype.Service;
-import ru.derendyaev.ideathesis_bot_service.dto.AuthResponse;
+import ru.derendyaev.ideathesis_bot_service.dto.auth.AuthResponse;
 import ru.derendyaev.ideathesis_bot_service.models.BotState;
 
 import java.util.concurrent.ConcurrentHashMap;

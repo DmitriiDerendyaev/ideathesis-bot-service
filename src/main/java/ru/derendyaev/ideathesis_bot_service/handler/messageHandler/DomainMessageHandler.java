@@ -26,6 +26,27 @@ public class DomainMessageHandler implements MessageHandler {
         this.topicServiceClient = topicServiceClient;
     }
 
+    /**
+     * Escapes special characters for Telegram MarkdownV2.
+     * @param text The input text to escape.
+     * @return The escaped text.
+     */
+    private String escapeMarkdownV2(String text) {
+        if (text == null) {
+            return "";
+        }
+        String[] specialCharacters = new String[]{
+                "\\_", "\\*", "\\[", "\\]", "\\(", "\\)", "\\~", "\\`", "\\>",
+                "\\#", "\\+", "\\-", "\\=", "\\|", "\\{", "\\}", "\\.", "\\!"
+        };
+        String escapedText = text;
+        for (String specialChar : specialCharacters) {
+            String rawChar = specialChar.substring(1); // Remove the leading \
+            escapedText = escapedText.replace(rawChar, specialChar);
+        }
+        return escapedText;
+    }
+
     @Override
     public void handle(Message msg) {
         long chatId = msg.getChatId();
@@ -36,8 +57,8 @@ public class DomainMessageHandler implements MessageHandler {
 
         String studentGuid = session.getAuth().getUser().getGuid();
         String competencies = String.join(",", session.getCompetencies());
-        String areaOfStudy = String.join(",", session.getDomains()); // Предполагаем, что берём первую область как основную
-        String educationLevel = "BACHELOR"; // Установим значение по умолчанию, можно уточнить позже
+        String areaOfStudy = String.join(",", session.getDomains());
+        String educationLevel = "BACHELOR";
 
         GenerateTopicRequest request = new GenerateTopicRequest();
         request.setCompetencies(competencies);
@@ -51,15 +72,19 @@ public class DomainMessageHandler implements MessageHandler {
 
         topicServiceClient.generateTopics(studentGuid, request)
                 .doOnNext(response -> {
-                    StringBuilder topicsMessage = new StringBuilder("Сгенерированные темы:\n");
+                    StringBuilder topicsMessage = new StringBuilder("*Сгенерированные темы:*\n\n");
                     response.getTopics().forEach(topic -> {
                         topicsMessage.append(String.format(
-                                "📌 *%s*\nОписание: %s\nАктуальность: %s\nПроблемы: %s\nРекомендуемые навыки: %s\n\n",
-                                topic.getTitle(),
-                                topic.getDescription(),
-                                topic.getActuality(),
-                                topic.getProblems(),
-                                String.join(", ", topic.getRecommendedSkills())
+                                "📌 *%s*\n" +
+                                        "*Описание:* %s\n" +
+                                        "*Актуальность:* %s\n" +
+                                        "*Проблемы:*\n%s\n" +
+                                        "*Рекомендуемые навыки:* %s\n\n",
+                                escapeMarkdownV2(topic.getTitle()),
+                                escapeMarkdownV2(topic.getDescription()),
+                                escapeMarkdownV2(topic.getActuality()),
+                                formatProblems(escapeMarkdownV2(topic.getProblems())),
+                                escapeMarkdownV2(String.join(", ", topic.getRecommendedSkills()))
                         ));
                     });
                     botServiceDelegate.sendMessage(chatId, topicsMessage.toString(), ParseMode.MARKDOWN);
@@ -70,5 +95,33 @@ public class DomainMessageHandler implements MessageHandler {
                 })
                 .doOnSuccess(response -> botServiceDelegate.getUserStateService().clear(chatId))
                 .subscribe();
+    }
+
+    /**
+     * Formats the problems section to ensure proper MarkdownV2 list formatting.
+     * Preserves existing dashes (escaped or not) without adding duplicates.
+     * @param problems The problems text to format.
+     * @return The formatted problems text.
+     */
+    private String formatProblems(String problems) {
+        if (problems == null || problems.trim().isEmpty()) {
+            return "\\- Нет данных\n";
+        }
+        String[] problemLines = problems.split("\n");
+        StringBuilder formatted = new StringBuilder();
+        for (String line : problemLines) {
+            String trimmedLine = line.trim();
+            if (!trimmedLine.isEmpty()) {
+                // Check if the line starts with an escaped dash (\-) or a raw dash (-)
+                if (trimmedLine.startsWith("\\-") || trimmedLine.startsWith("-")) {
+                    // Use the line as-is (preserving the escaped dash)
+                    formatted.append(trimmedLine).append("\n");
+                } else {
+                    // Add an escaped dash prefix for non-dashed lines
+                    formatted.append("\\- ").append(trimmedLine).append("\n");
+                }
+            }
+        }
+        return formatted.length() > 0 ? formatted.toString() : "\\- Нет данных\n";
     }
 }

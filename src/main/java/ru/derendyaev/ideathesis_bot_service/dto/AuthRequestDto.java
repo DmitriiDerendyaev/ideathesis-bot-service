@@ -1,18 +1,16 @@
-package ru.derendyaev.ideathesis_bot_service.models;
+package ru.derendyaev.ideathesis_bot_service.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.RequiredArgsConstructor;
 
 @Data
 @AllArgsConstructor
-public class AuthRequest {
+public class AuthRequestDto {
     private String ulogin;
     private String upassword;
     private String clientType = "telegram";
 
-    public AuthRequest(String login, String password) {
+    public AuthRequestDto(String login, String password) {
         this.ulogin = login;
         this.upassword = password;
     }

@@ -15,6 +15,8 @@ import org.telegram.telegrambots.updatesreceivers.DefaultBotSession;
 import ru.derendyaev.ideathesis_bot_service.client.AuthServiceClient;
 import ru.derendyaev.ideathesis_bot_service.handler.MessageHandler;
 import ru.derendyaev.ideathesis_bot_service.models.BotState;
+import ru.derendyaev.ideathesis_bot_service.models.ParseMode;
+import ru.derendyaev.ideathesis_bot_service.models.user.UserStateService;
 
 import java.util.Arrays;
 import java.util.List;
@@ -59,14 +61,18 @@ public class BotService extends TelegramLongPollingBot implements BotServiceDele
         }
     }
 
-    @Override
     public void sendMessage(long chatId, String text) {
-        SendMessage message = SendMessage.builder()
-                .chatId(String.valueOf(chatId))
-                .text(text)
-                .build();
+        sendMessage(chatId, text, ParseMode.NONE); // Делегируем вызов с ParseMode.NONE
+    }
+
+    @Override
+    public void sendMessage(long chatId, String text, ParseMode parseMode) {
         try {
-            execute(message);
+            execute(SendMessage.builder()
+                    .chatId(String.valueOf(chatId))
+                    .text(text)
+                    .parseMode(parseMode != ParseMode.NONE ? parseMode.getValue() : null)
+                    .build());
         } catch (TelegramApiException e) {
             log.error("Failed to send message", e);
         }

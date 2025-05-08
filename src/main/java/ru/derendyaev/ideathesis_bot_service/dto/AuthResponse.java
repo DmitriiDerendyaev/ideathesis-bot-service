@@ -1,6 +1,7 @@
 package ru.derendyaev.ideathesis_bot_service.dto;
 
 import lombok.Data;
+import ru.derendyaev.ideathesis_bot_service.models.user.User;
 
 @Data
 public class AuthResponse {

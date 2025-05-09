@@ -4,6 +4,7 @@ import lombok.Data;
 import java.util.List;
 
 import ru.derendyaev.ideathesis_bot_service.dto.auth.AuthResponse;
+import ru.derendyaev.ideathesis_bot_service.dto.topic.GenerateTopicResponse;
 import ru.derendyaev.ideathesis_bot_service.dto.topic.GeneratedTopicDto;
 import ru.derendyaev.ideathesis_bot_service.models.student.StudentDetails;
 
@@ -13,5 +14,8 @@ public class UserSessionData {
     private StudentDetails studentDetails;
     private List<String> competencies;
     private List<String> domains;
-    private List<GeneratedTopicDto> generatedTopics; // Добавлено для хранения тем
+
+    private List<GeneratedTopicDto> generatedTopicsOld; // Добавлено для хранения тем
+    private GenerateTopicResponse generatedTopics; // Добавляем для хранения сгенерированных тем
+
 }

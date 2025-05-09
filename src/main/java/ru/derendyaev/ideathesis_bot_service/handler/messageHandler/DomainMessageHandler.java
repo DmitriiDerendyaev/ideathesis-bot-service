@@ -8,6 +8,7 @@ import org.springframework.stereotype.Component;
 import ru.derendyaev.ideathesis_bot_service.client.TopicServiceClient;
 import ru.derendyaev.ideathesis_bot_service.dto.topic.GenerateTopicRequest;
 import ru.derendyaev.ideathesis_bot_service.handler.MessageHandler;
+import ru.derendyaev.ideathesis_bot_service.models.BotState;
 import ru.derendyaev.ideathesis_bot_service.models.user.UserSessionData;
 import ru.derendyaev.ideathesis_bot_service.services.BotServiceDelegate;
 import org.telegram.telegrambots.meta.api.objects.Message;
@@ -34,25 +35,28 @@ public class DomainMessageHandler implements MessageHandler {
         long chatId = msg.getChatId();
         String text = msg.getText().trim();
 
-        // Обновляем сессию с доменами
         UserSessionData session = botServiceDelegate.getUserStateService().getSessionData(chatId);
         session.setDomains(botServiceDelegate.splitList(text));
 
-        // Извлекаем studentGuid и создаём запрос
         String studentGuid = session.getAuth().getUser().getGuid();
         botServiceDelegate.sendMessage(chatId, messageUtils.buildSummaryMessage(session), ParseMode.HTML);
 
-        // Отправляем запрос в topic-service
         topicServiceClient.generateTopics(studentGuid, messageUtils.createGenerateTopicRequest(session))
                 .doOnNext(response -> {
-                    // Формируем и отправляем сообщение с темами
-                    botServiceDelegate.sendMessage(chatId, messageUtils.buildTopicsMessage(response), ParseMode.MARKDOWN);
+                    session.setGeneratedTopics(response); // Сохраняем темы в сессии
+                    String topicsMessage = messageUtils.buildTopicsMessage(response);
+                    botServiceDelegate.sendMessageWithKeyboard(
+                            chatId,
+                            topicsMessage,
+                            ParseMode.MARKDOWN,
+                            messageUtils.createTopicSelectionKeyboard(response)
+                    );
                 })
                 .doOnError(ex -> {
                     log.error("Ошибка при генерации тем: {}", ex.getMessage());
                     botServiceDelegate.sendMessage(chatId, "Произошла ошибка при генерации тем. Попробуйте позже.", ParseMode.NONE);
                 })
-                .doOnSuccess(response -> botServiceDelegate.getUserStateService().clear(chatId))
+                .doOnSuccess(response -> botServiceDelegate.getUserStateService().setState(chatId, BotState.TOPIC_SELECTION))
                 .subscribe();
     }
 }

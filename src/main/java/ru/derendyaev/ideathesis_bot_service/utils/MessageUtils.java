@@ -1,9 +1,14 @@
 package ru.derendyaev.ideathesis_bot_service.utils;
 
 import org.springframework.stereotype.Component;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 import ru.derendyaev.ideathesis_bot_service.dto.topic.GenerateTopicRequest;
 import ru.derendyaev.ideathesis_bot_service.dto.topic.GenerateTopicResponse;
 import ru.derendyaev.ideathesis_bot_service.models.user.UserSessionData;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Component
 public class MessageUtils {
@@ -101,5 +106,36 @@ public class MessageUtils {
             ));
         });
         return topicsMessage.toString();
+    }
+
+    /**
+     * Creates an InlineKeyboardMarkup with buttons for topic selection and regeneration.
+     * @param response The GenerateTopicResponse containing the topics.
+     * @return The InlineKeyboardMarkup with buttons.
+     */
+    public InlineKeyboardMarkup createTopicSelectionKeyboard(GenerateTopicResponse response) {
+        List<List<InlineKeyboardButton>> keyboard = new ArrayList<>();
+
+        // Кнопки для выбора тем (максимум 3 темы)
+        int topicIndex = 1;
+        for (var topic : response.getTopics().subList(0, Math.min(3, response.getTopics().size()))) {
+            InlineKeyboardButton topicButton = InlineKeyboardButton.builder()
+                    .text("Тема " + topicIndex + ": " + topic.getTitle())
+                    .callbackData("select_" + topic.getId())
+                    .build();
+            keyboard.add(List.of(topicButton));
+            topicIndex++;
+        }
+
+        // Широкая кнопка "Перегенерировать"
+        InlineKeyboardButton regenerateButton = InlineKeyboardButton.builder()
+                .text("Перегенерировать")
+                .callbackData("regenerate")
+                .build();
+        keyboard.add(List.of(regenerateButton));
+
+        return InlineKeyboardMarkup.builder()
+                .keyboard(keyboard)
+                .build();
     }
 }

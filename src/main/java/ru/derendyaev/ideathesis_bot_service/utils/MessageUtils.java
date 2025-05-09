@@ -79,7 +79,7 @@ public class MessageUtils {
      * @return The formatted summary message.
      */
     public String buildSummaryMessage(UserSessionData session) {
-        return String.format("Компетенции: %s\nОбласти: %s\nСпасибо! Подбираю темы...",
+        return String.format("Компетенции: %s\nОбласти: %s\nСпасибо!",
                 String.join(", ", session.getCompetencies()),
                 String.join(", ", session.getDomains()));
     }

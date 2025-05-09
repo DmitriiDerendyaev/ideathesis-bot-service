@@ -33,6 +33,8 @@ public class BotService extends TelegramLongPollingBot implements BotServiceDele
     private final AuthServiceClient authClient;
     private final Map<BotState, MessageHandler> handlers;
     private final CallbackHandler callbackHandler;
+    private final MessageHandler startMessageHandler;
+    private final MessageHandler logoutMessageHandler;
 
     @Value("${app.values.bot.token}")
     private String token;
@@ -49,7 +51,17 @@ public class BotService extends TelegramLongPollingBot implements BotServiceDele
     @Override
     public void onUpdateReceived(Update update) {
         if (update.hasMessage() && update.getMessage().hasText()) {
-            handleMessage(update.getMessage());
+            Message msg = update.getMessage();
+            String text = msg.getText().trim();
+
+            // Обрабатываем команды /start и /logout независимо от состояния
+            if ("/start".equals(text)) {
+                startMessageHandler.handle(msg);
+            } else if ("/logout".equals(text)) {
+                logoutMessageHandler.handle(msg);
+            } else {
+                handleMessage(msg);
+            }
         } else if (update.hasCallbackQuery()) {
             handleCallbackQuery(update.getCallbackQuery());
         }

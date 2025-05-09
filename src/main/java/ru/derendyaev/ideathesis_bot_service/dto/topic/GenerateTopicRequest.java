@@ -13,4 +13,13 @@ public class GenerateTopicRequest {
 
     @NotBlank(message = "Уровень обучения не может быть пустым")
     private String educationLevel;
+
+    public GenerateTopicRequest(String competencies, String areaOfStudy, String educationLevel) {
+        this.competencies = competencies;
+        this.areaOfStudy = areaOfStudy;
+        this.educationLevel = educationLevel;
+    }
+
+    public GenerateTopicRequest() {
+    }
 }

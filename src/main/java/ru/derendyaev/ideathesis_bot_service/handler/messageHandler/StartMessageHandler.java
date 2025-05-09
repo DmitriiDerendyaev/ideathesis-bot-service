@@ -1,5 +1,6 @@
 package ru.derendyaev.ideathesis_bot_service.handler.messageHandler;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
@@ -33,6 +34,9 @@ public class StartMessageHandler implements MessageHandler {
         String text = msg.getText().trim();
 
         if ("/start".equals(text)) {
+            // Сбрасываем состояние пользователя
+            botServiceDelegate.getUserStateService().clear(chatId);
+
             Map<String, Object> context = new HashMap<>();
             String introMessage = templateService.render("intro_message.mustache", context);
             botServiceDelegate.sendMessage(chatId, introMessage, ParseMode.MARKDOWN);

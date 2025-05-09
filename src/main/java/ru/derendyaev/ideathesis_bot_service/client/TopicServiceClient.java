@@ -34,9 +34,10 @@ public class TopicServiceClient {
                 .bodyToMono(GenerateTopicResponse.class);
     }
 
-    public Mono<Void> selectTopic(String studentGuid, Long topicId) {
+    public Mono<Void> selectTopic(String studentGuid, Long topicId, String supervisorGuid) {
         SelectTopicRequest request = new SelectTopicRequest();
         request.setTopicId(topicId);
+        request.setSupervisorGuid(supervisorGuid); // Устанавливаем GUID преподавателя
         return topicWebClient.post()
                 .uri("/api/topics/select")
                 .header("X-Student-Guid", studentGuid)

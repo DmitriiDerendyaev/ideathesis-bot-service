@@ -7,5 +7,7 @@ public enum BotState {
     AWAITING_DOMAIN,
     TOPIC_SELECTION,
     TOPIC_CONFIRMATION, // Подтверждение выбора темы
-    AWAITING_SUPERVISOR // Ожидание ввода ФИО преподавателя
+    AWAITING_SUPERVISOR, // Ожидание ввода ФИО преподавателя
+    SUPERVISOR_CONFIRMATION,
+    COMPLETED
 }

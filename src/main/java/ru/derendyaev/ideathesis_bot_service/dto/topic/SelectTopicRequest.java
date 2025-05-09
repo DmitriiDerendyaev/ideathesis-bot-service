@@ -5,4 +5,5 @@ import lombok.Data;
 @Data
 public class SelectTopicRequest {
     private Long topicId;
+    private String supervisorGuid; // Добавляем GUID преподавателя
 }

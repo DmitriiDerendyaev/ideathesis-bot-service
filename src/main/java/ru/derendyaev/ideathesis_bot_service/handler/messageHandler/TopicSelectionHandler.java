@@ -30,11 +30,13 @@ public class TopicSelectionHandler implements CallbackHandler {
 
     private final BotServiceDelegate botServiceDelegate;
     private final TopicServiceClient topicServiceClient;
+    private final UsersServiceClient usersServiceClient; // Добавляем для проверки преподавателя
     private final MessageUtils messageUtils;
 
-    public TopicSelectionHandler(@Lazy BotServiceDelegate botServiceDelegate, TopicServiceClient topicServiceClient, MessageUtils messageUtils) {
+    public TopicSelectionHandler(@Lazy BotServiceDelegate botServiceDelegate, TopicServiceClient topicServiceClient, UsersServiceClient usersServiceClient, MessageUtils messageUtils) {
         this.botServiceDelegate = botServiceDelegate;
         this.topicServiceClient = topicServiceClient;
+        this.usersServiceClient = usersServiceClient;
         this.messageUtils = messageUtils;
     }
 
@@ -74,15 +76,13 @@ public class TopicSelectionHandler implements CallbackHandler {
             botServiceDelegate.getUserStateService().setState(chatId, BotState.AWAITING_DOMAIN);
         } else if ("use_previous_domains".equals(data)) {
             handleDomainInput(chatId, session);
-        } else if (data.startsWith("select_")) {
+        } else if (data.startsWith("select_") && !data.startsWith("select_supervisor_")) {
+            // Обработка выбора темы (исключаем выбор преподавателя)
             Long topicId = Long.parseLong(data.split("_")[1]);
             String studentGuid = session.getAuth().getUser().getGuid();
 
             topicServiceClient.getLastTenTopics(studentGuid)
                     .doOnNext(lastTenTopics -> {
-                        List<GeneratedTopicDto> lastTenTopicsDto = lastTenTopics.stream()
-                                .map(t -> new GeneratedTopicDto(t.getId(), t.getTitle(), t.getDescription(), t.getActuality(), t.getProblems(), t.getRecommendedSkills()))
-                                .collect(Collectors.toList());
                         GeneratedTopicDto selectedTopic = session.getGeneratedTopics().getTopics().stream()
                                 .filter(t -> t.getId().equals(topicId))
                                 .findFirst()
@@ -101,16 +101,39 @@ public class TopicSelectionHandler implements CallbackHandler {
                         botServiceDelegate.sendMessage(chatId, "Произошла ошибка. Попробуйте снова.", ParseMode.NONE);
                     })
                     .subscribe();
+        } else if (data.startsWith("select_supervisor_")) {
+            // Обработка выбора преподавателя
+            String supervisorGuid = data.split("_")[2];
+            usersServiceClient.getEmployeeById(supervisorGuid) // Предполагаемый метод для получения преподавателя по GUID
+                    .doOnNext(employee -> {
+                        session.setSupervisor(employee); // Устанавливаем преподавателя в сессии
+                        String confirmationMessage = String.format(
+                                "*Выбранный преподаватель:*\nФИО: %s\nДолжность: %s\nКафедра: %s\n\nПодтвердите выбор преподавателя\\.",
+                                employee.getFullName(),
+                                employee.getPosition(),
+                                employee.getDepartment()
+                        );
+                        InlineKeyboardMarkup keyboard = InlineKeyboardMarkup.builder()
+                                .keyboardRow(List.of(
+                                        InlineKeyboardButton.builder().text("Подтвердить").callbackData("confirm_supervisor").build(),
+                                        InlineKeyboardButton.builder().text("Отмена").callbackData("retry_supervisor").build()
+                                ))
+                                .build();
+                        botServiceDelegate.sendMessageWithKeyboard(chatId, confirmationMessage, ParseMode.MARKDOWN, keyboard);
+                        botServiceDelegate.getUserStateService().setState(chatId, BotState.SUPERVISOR_CONFIRMATION);
+                    })
+                    .doOnError(ex -> {
+                        log.error("Ошибка при получении данных преподавателя: {}", ex.getMessage());
+                        botServiceDelegate.sendMessage(chatId, "Произошла ошибка. Попробуйте снова.", ParseMode.NONE);
+                    })
+                    .subscribe();
         } else if (data.startsWith("change_select_")) {
             Long topicId = Long.parseLong(data.split("_")[2]);
             String studentGuid = session.getAuth().getUser().getGuid();
 
             topicServiceClient.getLastTenTopics(studentGuid)
                     .doOnNext(lastTenTopics -> {
-                        List<GeneratedTopicDto> lastTenTopicsDto = lastTenTopics.stream()
-                                .map(t -> new GeneratedTopicDto(t.getId(), t.getTitle(), t.getDescription(), t.getActuality(), t.getProblems(), t.getRecommendedSkills()))
-                                .collect(Collectors.toList());
-                        GeneratedTopicDto newTopic = lastTenTopicsDto.stream()
+                        GeneratedTopicDto newTopic = lastTenTopics.stream()
                                 .filter(t -> t.getId().equals(topicId))
                                 .findFirst()
                                 .orElseThrow(() -> new IllegalStateException("Тема не найдена"));
@@ -152,6 +175,18 @@ public class TopicSelectionHandler implements CallbackHandler {
                     messageUtils.createTopicSelectionKeyboard(session.getGeneratedTopics())
             );
             botServiceDelegate.getUserStateService().setState(chatId, BotState.TOPIC_SELECTION);
+        } else if ("retry_supervisor".equals(data)) {
+            botServiceDelegate.sendMessage(chatId, "Введите ФИО преподавателя для выбора руководителя.", ParseMode.NONE);
+            botServiceDelegate.getUserStateService().setState(chatId, BotState.AWAITING_SUPERVISOR);
+        } else if ("confirm_supervisor".equals(data)) {
+            if (session.getSupervisor() != null) {
+                botServiceDelegate.sendMessage(chatId, "Преподаватель успешно выбран. Тема отправлена на согласование.", ParseMode.NONE);
+                // Здесь можно добавить логику отправки темы с выбранным преподавателем (например, через topicServiceClient)
+                botServiceDelegate.getUserStateService().setState(chatId, BotState.COMPLETED); // Или другое состояние
+            } else {
+                botServiceDelegate.sendMessage(chatId, "Преподаватель не выбран. Повторите поиск.", ParseMode.NONE);
+                botServiceDelegate.getUserStateService().setState(chatId, BotState.AWAITING_SUPERVISOR);
+            }
         }
     }
 

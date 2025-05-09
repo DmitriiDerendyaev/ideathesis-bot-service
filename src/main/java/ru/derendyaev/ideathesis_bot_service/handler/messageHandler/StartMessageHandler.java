@@ -34,7 +34,6 @@ public class StartMessageHandler implements MessageHandler {
         String text = msg.getText().trim();
 
         if ("/start".equals(text)) {
-            // Сбрасываем состояние пользователя
             botServiceDelegate.getUserStateService().clear(chatId);
 
             Map<String, Object> context = new HashMap<>();

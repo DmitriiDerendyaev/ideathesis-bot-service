@@ -41,7 +41,6 @@ public class DomainMessageHandler implements MessageHandler {
         String studentGuid = session.getAuth().getUser().getGuid();
         botServiceDelegate.sendMessage(chatId, messageUtils.buildSummaryMessage(session), ParseMode.HTML);
 
-        // Отправляем сообщение с индикатором загрузки
         botServiceDelegate.sendMessage(chatId, "Подбираю темы... ⏳", ParseMode.NONE);
 
         topicServiceClient.generateTopics(studentGuid, messageUtils.createGenerateTopicRequest(session))

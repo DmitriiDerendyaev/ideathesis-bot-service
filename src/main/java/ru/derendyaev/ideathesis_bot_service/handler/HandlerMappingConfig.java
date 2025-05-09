@@ -3,10 +3,7 @@ package ru.derendyaev.ideathesis_bot_service.handler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import ru.derendyaev.ideathesis_bot_service.handler.messageHandler.CompetenciesMessageHandler;
-import ru.derendyaev.ideathesis_bot_service.handler.messageHandler.CredentialsMessageHandler;
-import ru.derendyaev.ideathesis_bot_service.handler.messageHandler.DomainMessageHandler;
-import ru.derendyaev.ideathesis_bot_service.handler.messageHandler.StartMessageHandler;
+import ru.derendyaev.ideathesis_bot_service.handler.messageHandler.*;
 import ru.derendyaev.ideathesis_bot_service.models.BotState;
 
 import java.util.HashMap;
@@ -31,6 +28,8 @@ public class HandlerMappingConfig {
                 mapping.put(BotState.AWAITING_COMPETENCIES, handler);
             } else if (handler instanceof DomainMessageHandler) {
                 mapping.put(BotState.AWAITING_DOMAIN, handler);
+            } else if (handler instanceof SupervisorSelectionHandler) {
+                mapping.put(BotState.AWAITING_SUPERVISOR, handler);
             }
         }
         return mapping;

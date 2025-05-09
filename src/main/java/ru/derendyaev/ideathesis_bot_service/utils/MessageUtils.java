@@ -5,6 +5,7 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMa
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 import ru.derendyaev.ideathesis_bot_service.dto.topic.GenerateTopicRequest;
 import ru.derendyaev.ideathesis_bot_service.dto.topic.GenerateTopicResponse;
+import ru.derendyaev.ideathesis_bot_service.dto.topic.GeneratedTopicDto;
 import ru.derendyaev.ideathesis_bot_service.models.user.UserSessionData;
 
 import java.util.ArrayList;
@@ -137,5 +138,41 @@ public class MessageUtils {
         return InlineKeyboardMarkup.builder()
                 .keyboard(keyboard)
                 .build();
+    }
+
+
+    public String buildTopicConfirmationMessage(GeneratedTopicDto selectedTopic, List<GeneratedTopicDto> lastTenTopics) {
+        StringBuilder message = new StringBuilder("*Выбрана тема:*\n");
+        message.append(String.format(
+                "📌 *%s*\n*Описание:* %s\n*Актуальность:* %s\n*Проблемы:*\n%s\n*Рекомендуемые навыки:* %s\n\n",
+                escapeMarkdownV2(selectedTopic.getTitle()),
+                escapeMarkdownV2(selectedTopic.getDescription()),
+                escapeMarkdownV2(selectedTopic.getActuality()),
+                formatProblems(escapeMarkdownV2(selectedTopic.getProblems())),
+                escapeMarkdownV2(String.join(", ", selectedTopic.getRecommendedSkills()))
+        ));
+        message.append("*Ваши последние 10 тем:*\n");
+        for (int i = 0; i < Math.min(10, lastTenTopics.size()); i++) {
+            GeneratedTopicDto topic = lastTenTopics.get(i);
+            message.append(String.format("%d\\. *%s*\n", i + 1, escapeMarkdownV2(topic.getTitle())));
+        }
+        message.append("\nУверены в выборе этой темы? Или хотите выбрать другую?");
+        return message.toString();
+    }
+
+    public InlineKeyboardMarkup createConfirmationKeyboard(GeneratedTopicDto selectedTopic, List<GeneratedTopicDto> lastTenTopics) {
+        List<List<InlineKeyboardButton>> keyboard = new ArrayList<>();
+        for (GeneratedTopicDto topic : lastTenTopics.subList(0, Math.min(10, lastTenTopics.size()))) {
+            InlineKeyboardButton topicButton = InlineKeyboardButton.builder()
+                    .text("Выбрать: " + topic.getTitle())
+                    .callbackData("change_select_" + topic.getId())
+                    .build();
+            keyboard.add(List.of(topicButton));
+        }
+        keyboard.add(List.of(
+                InlineKeyboardButton.builder().text("Подтвердить выбор").callbackData("confirm_select_" + selectedTopic.getId()).build(),
+                InlineKeyboardButton.builder().text("Отмена").callbackData("cancel_select").build()
+        ));
+        return InlineKeyboardMarkup.builder().keyboard(keyboard).build();
     }
 }

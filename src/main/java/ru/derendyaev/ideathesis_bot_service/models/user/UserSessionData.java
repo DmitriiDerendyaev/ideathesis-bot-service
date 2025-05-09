@@ -15,7 +15,7 @@ public class UserSessionData {
     private List<String> competencies;
     private List<String> domains;
 
-    private List<GeneratedTopicDto> generatedTopicsOld; // Добавлено для хранения тем
     private GenerateTopicResponse generatedTopics; // Добавляем для хранения сгенерированных тем
+    private GeneratedTopicDto selectedTopic; // Добавляем выбранную тему
 
 }

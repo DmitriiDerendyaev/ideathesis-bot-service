@@ -50,8 +50,8 @@ public class SupervisorSelectionHandler implements MessageHandler {
                         String employeeInfo = String.format(
                                 "*Преподаватель:*\nФИО: %s\nДолжность: %s\nКафедра: %s",
                                 employee.getFullName(),
-                                employee.getPosition(),
-                                employee.getDepartment()
+                                employee.getPosition() != null ? employee.getPosition() : "Не указана",
+                                employee.getDepartment() != null ? employee.getDepartment() : "Не указана"
                         );
                         InlineKeyboardMarkup keyboard = InlineKeyboardMarkup.builder()
                                 .keyboardRow(List.of(

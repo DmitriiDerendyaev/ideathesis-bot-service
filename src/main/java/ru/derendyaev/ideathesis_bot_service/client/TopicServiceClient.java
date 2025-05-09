@@ -58,7 +58,8 @@ public class TopicServiceClient {
                         response -> Mono.error(new BadRequestException("Ошибка получения истории тем")))
                 .onStatus(HttpStatusCode::is5xxServerError,
                         response -> Mono.error(new ServiceUnavailableException("topic-service недоступен")))
-                .bodyToMono(new ParameterizedTypeReference<>() {});
+                .bodyToMono(GenerateTopicResponse.class)
+                .map(GenerateTopicResponse::getTopics); // Извлекаем список GeneratedTopicDto
     }
 
     public Mono<Void> updateTopicStatus(String studentGuid, TopicStatusUpdateRequest request) {

@@ -151,10 +151,15 @@ public class MessageUtils {
                 formatProblems(escapeMarkdownV2(selectedTopic.getProblems())),
                 escapeMarkdownV2(String.join(", ", selectedTopic.getRecommendedSkills()))
         ));
-        message.append("*Ваши последние 10 тем:*\n");
-        for (int i = 0; i < Math.min(10, lastTenTopics.size()); i++) {
-            GeneratedTopicDto topic = lastTenTopics.get(i);
-            message.append(String.format("%d\\. *%s*\n", i + 1, escapeMarkdownV2(topic.getTitle())));
+
+        if (lastTenTopics != null && !lastTenTopics.isEmpty()) {
+            message.append("*Ваши последние 10 тем:*\n");
+            for (int i = 0; i < Math.min(10, lastTenTopics.size()); i++) {
+                GeneratedTopicDto topic = lastTenTopics.get(i);
+                message.append(String.format("%d\\. *%s*\n", i + 1, escapeMarkdownV2(topic.getTitle())));
+            }
+        } else {
+            message.append("*Ваши последние 10 тем: Нет данных*\n");
         }
         message.append("\nУверены в выборе этой темы? Или хотите выбрать другую?");
         return message.toString();
@@ -162,12 +167,15 @@ public class MessageUtils {
 
     public InlineKeyboardMarkup createConfirmationKeyboard(GeneratedTopicDto selectedTopic, List<GeneratedTopicDto> lastTenTopics) {
         List<List<InlineKeyboardButton>> keyboard = new ArrayList<>();
-        for (GeneratedTopicDto topic : lastTenTopics.subList(0, Math.min(10, lastTenTopics.size()))) {
-            InlineKeyboardButton topicButton = InlineKeyboardButton.builder()
-                    .text("Выбрать: " + topic.getTitle())
-                    .callbackData("change_select_" + topic.getId())
-                    .build();
-            keyboard.add(List.of(topicButton));
+        if (lastTenTopics != null) {
+            for (int i = 0; i < Math.min(10, lastTenTopics.size()); i++) {
+                GeneratedTopicDto topic = lastTenTopics.get(i);
+                InlineKeyboardButton topicButton = InlineKeyboardButton.builder()
+                        .text((i + 1) + ": " + topic.getTitle())
+                        .callbackData("change_select_" + topic.getId())
+                        .build();
+                keyboard.add(List.of(topicButton));
+            }
         }
         keyboard.add(List.of(
                 InlineKeyboardButton.builder().text("Подтвердить выбор").callbackData("confirm_select_" + selectedTopic.getId()).build(),

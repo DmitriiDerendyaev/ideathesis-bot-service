@@ -22,6 +22,7 @@ import ru.derendyaev.ideathesis_bot_service.services.BotServiceDelegate;
 import ru.derendyaev.ideathesis_bot_service.utils.MessageUtils;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Component
@@ -29,13 +30,11 @@ public class TopicSelectionHandler implements CallbackHandler {
 
     private final BotServiceDelegate botServiceDelegate;
     private final TopicServiceClient topicServiceClient;
-//    private final UsersServiceClient usersServiceClient;
     private final MessageUtils messageUtils;
 
-    public TopicSelectionHandler(@Lazy BotServiceDelegate botServiceDelegate, TopicServiceClient topicServiceClient, UsersServiceClient usersServiceClient, MessageUtils messageUtils) {
+    public TopicSelectionHandler(@Lazy BotServiceDelegate botServiceDelegate, TopicServiceClient topicServiceClient, MessageUtils messageUtils) {
         this.botServiceDelegate = botServiceDelegate;
         this.topicServiceClient = topicServiceClient;
-//        this.usersServiceClient = usersServiceClient;
         this.messageUtils = messageUtils;
     }
 
@@ -46,7 +45,7 @@ public class TopicSelectionHandler implements CallbackHandler {
         UserSessionData session = botServiceDelegate.getUserStateService().getSessionData(chatId);
 
         if ("regenerate".equals(data)) {
-            String previousCompetencies = String.join(", ", session.getCompetencies());
+            String previousCompetencies = String.join(", ", session.getCompetencies() != null ? session.getCompetencies() : List.of());
             InlineKeyboardMarkup keyboard = InlineKeyboardMarkup.builder()
                     .keyboardRow(List.of(
                             InlineKeyboardButton.builder()
@@ -60,7 +59,7 @@ public class TopicSelectionHandler implements CallbackHandler {
             );
             botServiceDelegate.getUserStateService().setState(chatId, BotState.AWAITING_COMPETENCIES);
         } else if ("use_previous_competencies".equals(data)) {
-            String previousDomains = String.join(", ", session.getDomains());
+            String previousDomains = String.join(", ", session.getDomains() != null ? session.getDomains() : List.of());
             InlineKeyboardMarkup keyboard = InlineKeyboardMarkup.builder()
                     .keyboardRow(List.of(
                             InlineKeyboardButton.builder()
@@ -81,6 +80,9 @@ public class TopicSelectionHandler implements CallbackHandler {
 
             topicServiceClient.getLastTenTopics(studentGuid)
                     .doOnNext(lastTenTopics -> {
+                        List<GeneratedTopicDto> lastTenTopicsDto = lastTenTopics.stream()
+                                .map(t -> new GeneratedTopicDto(t.getId(), t.getTitle(), t.getDescription(), t.getActuality(), t.getProblems(), t.getRecommendedSkills()))
+                                .collect(Collectors.toList());
                         GeneratedTopicDto selectedTopic = session.getGeneratedTopics().getTopics().stream()
                                 .filter(t -> t.getId().equals(topicId))
                                 .findFirst()
@@ -105,9 +107,11 @@ public class TopicSelectionHandler implements CallbackHandler {
 
             topicServiceClient.getLastTenTopics(studentGuid)
                     .doOnNext(lastTenTopics -> {
-                        GeneratedTopicDto newTopic = lastTenTopics.stream()
-                                .filter(t -> t.getId().equals(topicId))
+                        List<GeneratedTopicDto> lastTenTopicsDto = lastTenTopics.stream()
                                 .map(t -> new GeneratedTopicDto(t.getId(), t.getTitle(), t.getDescription(), t.getActuality(), t.getProblems(), t.getRecommendedSkills()))
+                                .collect(Collectors.toList());
+                        GeneratedTopicDto newTopic = lastTenTopicsDto.stream()
+                                .filter(t -> t.getId().equals(topicId))
                                 .findFirst()
                                 .orElseThrow(() -> new IllegalStateException("Тема не найдена"));
                         session.setSelectedTopic(newTopic);
@@ -156,8 +160,8 @@ public class TopicSelectionHandler implements CallbackHandler {
         botServiceDelegate.sendMessage(chatId, "Подбираю темы... ⏳", ParseMode.NONE);
 
         topicServiceClient.generateTopics(studentGuid, new GenerateTopicRequest(
-                        String.join(",", session.getCompetencies()),
-                        String.join(",", session.getDomains()),
+                        String.join(",", session.getCompetencies() != null ? session.getCompetencies() : List.of()),
+                        String.join(",", session.getDomains() != null ? session.getDomains() : List.of()),
                         "BACHELOR"
                 ))
                 .doOnNext(response -> {

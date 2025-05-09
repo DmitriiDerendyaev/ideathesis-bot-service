@@ -12,6 +12,7 @@ import ru.derendyaev.ideathesis_bot_service.handler.MessageHandler;
 import ru.derendyaev.ideathesis_bot_service.models.ParseMode;
 import ru.derendyaev.ideathesis_bot_service.models.user.UserSessionData;
 import ru.derendyaev.ideathesis_bot_service.services.BotServiceDelegate;
+import ru.derendyaev.ideathesis_bot_service.utils.MessageUtils;
 
 import java.util.List;
 
@@ -21,10 +22,12 @@ public class SupervisorSelectionHandler implements MessageHandler {
 
     private final BotServiceDelegate botServiceDelegate;
     private final UsersServiceClient usersServiceClient;
+    private final MessageUtils messageUtils; // Добавляем MessageUtils
 
-    public SupervisorSelectionHandler(@Lazy BotServiceDelegate botServiceDelegate, UsersServiceClient usersServiceClient) {
+    public SupervisorSelectionHandler(@Lazy BotServiceDelegate botServiceDelegate, UsersServiceClient usersServiceClient, MessageUtils messageUtils) {
         this.botServiceDelegate = botServiceDelegate;
         this.usersServiceClient = usersServiceClient;
+        this.messageUtils = messageUtils;
     }
 
     @Override
@@ -48,10 +51,10 @@ public class SupervisorSelectionHandler implements MessageHandler {
                     } else {
                         EmployeeAllDto employee = employees.get(0); // Берём первого найденного
                         String employeeInfo = String.format(
-                                "*Преподаватель:*\nФИО: %s\nДолжность: %s\nКафедра: %s",
-                                employee.getFullName(),
-                                employee.getPosition() != null ? employee.getPosition() : "Не указана",
-                                employee.getDepartment() != null ? employee.getDepartment() : "Не указана"
+                                "*Преподаватель:*\nФИО: %s\nДолжности: %s\nКафедры: %s",
+                                messageUtils.escapeMarkdownV2(employee.getFullName()),
+                                messageUtils.escapeMarkdownV2(employee.getPosition()),
+                                messageUtils.escapeMarkdownV2(employee.getDepartment())
                         );
                         InlineKeyboardMarkup keyboard = InlineKeyboardMarkup.builder()
                                 .keyboardRow(List.of(

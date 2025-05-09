@@ -108,9 +108,9 @@ public class TopicSelectionHandler implements CallbackHandler {
                         session.setSupervisor(employee);
                         String confirmationMessage = String.format(
                                 "*Выбранный преподаватель:*\nФИО: %s\nДолжность: %s\nКафедра: %s\n\nПодтвердите выбор преподавателя\\.",
-                                employee.getFullName(),
-                                employee.getPosition(),
-                                employee.getDepartment()
+                                messageUtils.escapeMarkdownV2(employee.getFullName()),
+                                messageUtils.escapeMarkdownV2(employee.getPosition()),
+                                messageUtils.escapeMarkdownV2(employee.getDepartment())
                         );
                         InlineKeyboardMarkup keyboard = InlineKeyboardMarkup.builder()
                                 .keyboardRow(List.of(
@@ -180,7 +180,7 @@ public class TopicSelectionHandler implements CallbackHandler {
 
                 topicServiceClient.selectTopic(studentGuid, session.getSelectedTopic().getId(), supervisorGuid)
                         .doOnSuccess(response -> {
-                            botServiceDelegate.sendMessage(chatId, "Тема успешно выбрана и отправлена на согласование преподавателю.", ParseMode.NONE);
+                            botServiceDelegate.sendMessage(chatId, "Тема успешно выбрана и отправлена на согласование преподавателю.\n\nОжидайте ответное сообщение!", ParseMode.NONE);
                             botServiceDelegate.getUserStateService().setState(chatId, BotState.COMPLETED);
                         })
                         .doOnError(ex -> {

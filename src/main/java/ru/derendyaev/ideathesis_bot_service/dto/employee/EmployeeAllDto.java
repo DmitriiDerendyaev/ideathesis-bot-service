@@ -5,6 +5,7 @@ import lombok.Data;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Data
 public class EmployeeAllDto {
@@ -13,18 +14,31 @@ public class EmployeeAllDto {
     private String surname;
     private String email;
     private Date dateOfBirth;
-    private List<EmployeeEmploymentAllDto> employeeEmployments; // Добавляем список занятостей
+    private List<EmployeeEmploymentAllDto> employeeEmployments; // Список занятостей
 
-    // Динамическое получение должности и кафедры из первого элемента employeeEmployments
+    // Собираем все должности
     public String getPosition() {
-        return employeeEmployments != null && !employeeEmployments.isEmpty() ?
-                employeeEmployments.get(0).getJobTitle() != null ? employeeEmployments.get(0).getJobTitle().getName() : null :
-                null;
+        if (employeeEmployments == null || employeeEmployments.isEmpty()) {
+            return "Не указана";
+        }
+        return employeeEmployments.stream()
+                .filter(emp -> emp.getJobTitle() != null)
+                .map(emp -> emp.getJobTitle().getName())
+                .filter(name -> name != null && !name.trim().isEmpty())
+                .distinct()
+                .collect(Collectors.joining(", "));
     }
 
+    // Собираем все кафедры
     public String getDepartment() {
-        return employeeEmployments != null && !employeeEmployments.isEmpty() ?
-                employeeEmployments.get(0).getSubdivision() != null ? employeeEmployments.get(0).getSubdivision().getName() : null :
-                null;
+        if (employeeEmployments == null || employeeEmployments.isEmpty()) {
+            return "Не указана";
+        }
+        return employeeEmployments.stream()
+                .filter(emp -> emp.getSubdivision() != null)
+                .map(emp -> emp.getSubdivision().getName())
+                .filter(name -> name != null && !name.trim().isEmpty())
+                .distinct()
+                .collect(Collectors.joining(", "));
     }
 }

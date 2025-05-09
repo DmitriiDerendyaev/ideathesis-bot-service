@@ -152,20 +152,16 @@ public class TopicSelectionHandler implements CallbackHandler {
         } else if (data.startsWith("confirm_select_")) {
             Long topicId = Long.parseLong(data.split("_")[2]);
             String studentGuid = session.getAuth().getUser().getGuid();
-            TopicStatusUpdateRequest request = new TopicStatusUpdateRequest();
-            request.setTopicId(topicId);
-            request.setStatus(TopicStatus.PENDING);
 
-            topicServiceClient.updateTopicStatus(studentGuid, request)
-                    .doOnSuccess(response -> {
-                        botServiceDelegate.sendMessage(chatId, "Тема отправлена на согласование. Введите ФИО преподавателя для выбора руководителя.", ParseMode.NONE);
-                        botServiceDelegate.getUserStateService().setState(chatId, BotState.AWAITING_SUPERVISOR);
-                    })
-                    .doOnError(ex -> {
-                        log.error("Ошибка при обновлении статуса темы: {}", ex.getMessage());
-                        botServiceDelegate.sendMessage(chatId, "Произошла ошибка. Попробуйте снова.", ParseMode.NONE);
-                    })
-                    .subscribe();
+            // Устанавливаем выбранную тему в сессию и переходим к выбору преподавателя
+            GeneratedTopicDto selectedTopic = session.getGeneratedTopics().getTopics().stream()
+                    .filter(t -> t.getId().equals(topicId))
+                    .findFirst()
+                    .orElseThrow(() -> new IllegalStateException("Тема не найдена"));
+            session.setSelectedTopic(selectedTopic);
+
+            botServiceDelegate.sendMessage(chatId, "Тема готова к согласованию. Пожалуйста, выберите преподавателя, введя его ФИО.", ParseMode.NONE);
+            botServiceDelegate.getUserStateService().setState(chatId, BotState.AWAITING_SUPERVISOR);
         } else if ("cancel_select".equals(data)) {
             botServiceDelegate.sendMessageWithKeyboard(
                     chatId,

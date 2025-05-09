@@ -23,14 +23,13 @@ import ru.derendyaev.ideathesis_bot_service.utils.MessageUtils;
 
 import java.util.List;
 import java.util.stream.Collectors;
-
 @Slf4j
 @Component
 public class TopicSelectionHandler implements CallbackHandler {
 
     private final BotServiceDelegate botServiceDelegate;
     private final TopicServiceClient topicServiceClient;
-    private final UsersServiceClient usersServiceClient; // Добавляем для проверки преподавателя
+    private final UsersServiceClient usersServiceClient;
     private final MessageUtils messageUtils;
 
     public TopicSelectionHandler(@Lazy BotServiceDelegate botServiceDelegate, TopicServiceClient topicServiceClient, UsersServiceClient usersServiceClient, MessageUtils messageUtils) {
@@ -104,9 +103,9 @@ public class TopicSelectionHandler implements CallbackHandler {
         } else if (data.startsWith("select_supervisor_")) {
             // Обработка выбора преподавателя
             String supervisorGuid = data.split("_")[2];
-            usersServiceClient.getEmployeeById(supervisorGuid) // Предполагаемый метод для получения преподавателя по GUID
+            usersServiceClient.getEmployeeById(supervisorGuid)
                     .doOnNext(employee -> {
-                        session.setSupervisor(employee); // Устанавливаем преподавателя в сессии
+                        session.setSupervisor(employee);
                         String confirmationMessage = String.format(
                                 "*Выбранный преподаватель:*\nФИО: %s\nДолжность: %s\nКафедра: %s\n\nПодтвердите выбор преподавателя\\.",
                                 employee.getFullName(),
@@ -179,13 +178,23 @@ public class TopicSelectionHandler implements CallbackHandler {
             botServiceDelegate.sendMessage(chatId, "Введите ФИО преподавателя для выбора руководителя.", ParseMode.NONE);
             botServiceDelegate.getUserStateService().setState(chatId, BotState.AWAITING_SUPERVISOR);
         } else if ("confirm_supervisor".equals(data)) {
-            if (session.getSupervisor() != null) {
-                botServiceDelegate.sendMessage(chatId, "Преподаватель успешно выбран. Тема отправлена на согласование.", ParseMode.NONE);
-                // Здесь можно добавить логику отправки темы с выбранным преподавателем (например, через topicServiceClient)
-                botServiceDelegate.getUserStateService().setState(chatId, BotState.COMPLETED); // Или другое состояние
+            if (session.getSupervisor() != null && session.getSelectedTopic() != null) {
+                String studentGuid = session.getAuth().getUser().getGuid();
+                String supervisorGuid = session.getSupervisor().getGuid().toString();
+
+                topicServiceClient.selectTopic(studentGuid, session.getSelectedTopic().getId(), supervisorGuid)
+                        .doOnSuccess(response -> {
+                            botServiceDelegate.sendMessage(chatId, "Тема успешно выбрана и отправлена на согласование преподавателю.", ParseMode.NONE);
+                            botServiceDelegate.getUserStateService().setState(chatId, BotState.COMPLETED);
+                        })
+                        .doOnError(ex -> {
+                            log.error("Ошибка при выборе темы: {}", ex.getMessage());
+                            botServiceDelegate.sendMessage(chatId, "Произошла ошибка при выборе темы. Попробуйте снова.", ParseMode.NONE);
+                        })
+                        .subscribe();
             } else {
-                botServiceDelegate.sendMessage(chatId, "Преподаватель не выбран. Повторите поиск.", ParseMode.NONE);
-                botServiceDelegate.getUserStateService().setState(chatId, BotState.AWAITING_SUPERVISOR);
+                botServiceDelegate.sendMessage(chatId, "Тема или преподаватель не выбраны. Повторите процесс.", ParseMode.NONE);
+                botServiceDelegate.getUserStateService().setState(chatId, BotState.TOPIC_CONFIRMATION);
             }
         }
     }

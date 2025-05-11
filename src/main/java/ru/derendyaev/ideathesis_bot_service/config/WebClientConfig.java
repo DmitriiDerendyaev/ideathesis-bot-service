@@ -24,26 +24,29 @@ public class WebClientConfig {
     @Value("${app.values.users.service-url}")
     private String usersServiceUrl;
 
-    @Bean("authWebClient") // Явное указание имени бина
+    @Value("${app.values.topic.service-url}")
+    private String topicServiceUrl;
+
+    @Bean("authWebClient")
     public WebClient authWebClient() throws SSLException {
         return createWebClient(authServiceUrl);
     }
 
-    @Bean("usersWebClient") // Явное указание имени бина
+    @Bean("usersWebClient")
     public WebClient usersWebClient() throws SSLException {
         return createWebClient(usersServiceUrl);
     }
 
-    private WebClient createWebClient(String baseUrl) {
-        SslContext sslContext;
-        try {
-            sslContext = SslContextBuilder
-                    .forClient()
-                    .trustManager(InsecureTrustManagerFactory.INSTANCE)
-                    .build();
-        } catch (SSLException e) {
-            throw new RuntimeException(e);
-        }
+    @Bean("topicWebClient")
+    public WebClient topicWebClient() throws SSLException {
+        return createWebClient(topicServiceUrl);
+    }
+
+    private WebClient createWebClient(String baseUrl) throws SSLException {
+        SslContext sslContext = SslContextBuilder
+                .forClient()
+                .trustManager(InsecureTrustManagerFactory.INSTANCE)
+                .build();
 
         HttpClient httpClient = HttpClient.create()
                 .secure(t -> t.sslContext(sslContext));

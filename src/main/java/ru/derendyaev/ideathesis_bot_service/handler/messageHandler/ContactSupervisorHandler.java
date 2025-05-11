@@ -1,35 +1,27 @@
 package ru.derendyaev.ideathesis_bot_service.handler.messageHandler;
 
-import org.springframework.context.annotation.Lazy;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
-import ru.derendyaev.ideathesis_bot_service.dto.topic.StudentTopicSelectionDto;
-import ru.derendyaev.ideathesis_bot_service.handler.callbackData.CallbackHandler;
-
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.objects.CallbackQuery;
 import ru.derendyaev.ideathesis_bot_service.client.TopicServiceClient;
 import ru.derendyaev.ideathesis_bot_service.client.UsersServiceClient;
+import ru.derendyaev.ideathesis_bot_service.dto.topic.StudentTopicSelectionDto;
+import ru.derendyaev.ideathesis_bot_service.handler.callbackData.CallbackHandler;
 import ru.derendyaev.ideathesis_bot_service.models.ParseMode;
-import ru.derendyaev.ideathesis_bot_service.models.user.UserSessionData;
 import ru.derendyaev.ideathesis_bot_service.services.BotServiceDelegate;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
 
 @Slf4j
 @Component
-public class CheckTopicStatusHandler implements CallbackHandler {
+public class ContactSupervisorHandler implements CallbackHandler {
 
     private final BotServiceDelegate botServiceDelegate;
     private final TopicServiceClient topicServiceClient;
     private final UsersServiceClient usersServiceClient;
 
     @Autowired
-    public CheckTopicStatusHandler(@Lazy BotServiceDelegate botServiceDelegate, TopicServiceClient topicServiceClient, UsersServiceClient usersServiceClient) {
+    public ContactSupervisorHandler(@Lazy BotServiceDelegate botServiceDelegate, TopicServiceClient topicServiceClient, UsersServiceClient usersServiceClient) {
         this.botServiceDelegate = botServiceDelegate;
         this.topicServiceClient = topicServiceClient;
         this.usersServiceClient = usersServiceClient;
@@ -37,7 +29,7 @@ public class CheckTopicStatusHandler implements CallbackHandler {
 
     @Override
     public boolean canHandle(String callbackData) {
-        return callbackData.startsWith("check_status_");
+        return callbackData.startsWith("contact_supervisor_");
     }
 
     @Override
@@ -47,7 +39,7 @@ public class CheckTopicStatusHandler implements CallbackHandler {
         long chatId = callbackQuery.getMessage().getChatId();
         String studentGuid = botServiceDelegate.getUserStateService().getSessionData(chatId).getAuth().getUser().getGuid();
 
-        log.info("Handling check_status for topic ID: {} and student GUID: {}", topicId, studentGuid);
+        log.info("Handling contact_supervisor for topic ID: {} and student GUID: {}", topicId, studentGuid);
 
         topicServiceClient.getActiveTopicsForStudent(studentGuid)
                 .doOnNext(activeTopics -> {
@@ -55,34 +47,18 @@ public class CheckTopicStatusHandler implements CallbackHandler {
                             .filter(t -> t.getTopic().getId().equals(topicId))
                             .findFirst()
                             .orElseThrow(() -> new IllegalStateException("Topic not found"));
-                    log.info("Found topic: {} (status: {}, supervisor GUID: {})",
-                            topic.getTopic().getTitle(), topic.getTopic().getStatus().getDisplayName(), topic.getSupervisorGuid());
+                    log.info("Found topic for contact: {} (supervisor GUID: {})",
+                            topic.getTopic().getTitle(), topic.getSupervisorGuid());
 
                     usersServiceClient.getEmployeeById(topic.getSupervisorGuid().toString())
                             .doOnNext(employee -> {
-                                log.info("Successfully retrieved supervisor: {}", employee.getFullName());
+                                String supervisorName = employee.getFullName();
+                                log.info("Successfully retrieved supervisor for contact: {}", supervisorName);
                                 String message = String.format(
-                                        "Тема: %s\n- Статус: %s\n- Руководитель: %s\n- Описание: %s",
-                                        topic.getTopic().getTitle(),
-                                        topic.getTopic().getStatus(),
-                                        employee.getFullName(),
-                                        topic.getTopic().getDescription()
+                                        "Данная функциональность сейчас на доработке, вы можете братиться к преподавателю %s в ВУЗе.",
+                                        supervisorName
                                 );
-
-                                List<List<InlineKeyboardButton>> rows = new ArrayList<>();
-                                List<InlineKeyboardButton> row = new ArrayList<>();
-                                row.add(InlineKeyboardButton.builder()
-                                        .text("Написать преподавателю")
-                                        .callbackData("contact_supervisor_" + topicId)
-                                        .build());
-                                row.add(InlineKeyboardButton.builder()
-                                        .text("Отозвать заявку")
-                                        .callbackData("withdraw_" + topicId)
-                                        .build());
-                                rows.add(row);
-
-                                InlineKeyboardMarkup keyboard = InlineKeyboardMarkup.builder().keyboard(rows).build();
-                                botServiceDelegate.sendMessageWithKeyboard(chatId, message, ParseMode.NONE, keyboard);
+                                botServiceDelegate.sendMessage(chatId, message, ParseMode.NONE);
                             })
                             .doOnError(ex -> {
                                 log.error("Ошибка при получении данных преподавателя для GUID {}: {}: {}",
@@ -94,7 +70,7 @@ public class CheckTopicStatusHandler implements CallbackHandler {
                 .doOnError(ex -> {
                     log.error("Ошибка при получении темы с ID {}: {}: {}",
                             topicId, ex.getClass().getName(), ex.getMessage(), ex);
-                    botServiceDelegate.sendMessage(chatId, "Произошла ошибка при получении статуса темы.", ParseMode.NONE);
+                    botServiceDelegate.sendMessage(chatId, "Произошла ошибка при получении данных темы.", ParseMode.NONE);
                 })
                 .subscribe();
     }

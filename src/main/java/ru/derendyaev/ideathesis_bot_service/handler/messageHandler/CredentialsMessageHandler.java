@@ -24,13 +24,13 @@ public class CredentialsMessageHandler implements MessageHandler {
     private final BotServiceDelegate botServiceDelegate;
     private final AuthServiceClient authServiceClient;
     private final MustacheTemplateService templateService;
-    private final UsersServiceClient usersServiceClient; // Добавлено
+    private final UsersServiceClient usersServiceClient;
 
     @Autowired
     public CredentialsMessageHandler(
             @Lazy BotServiceDelegate botServiceDelegate,
             AuthServiceClient authServiceClient,
-            UsersServiceClient usersServiceClient, // Добавлено
+            UsersServiceClient usersServiceClient,
             MustacheTemplateService templateService
     ) {
         this.botServiceDelegate = botServiceDelegate;
@@ -93,6 +93,5 @@ public class CredentialsMessageHandler implements MessageHandler {
                     botServiceDelegate.sendMessage(chatId, "Сервис временно недоступен. Попробуйте позже.", ParseMode.NONE);
                 })
                 .subscribe();
-
     }
 }

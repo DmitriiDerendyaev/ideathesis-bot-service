@@ -1,28 +1,122 @@
-@startuml
-title Диаграмма состояний UserState (авторизация)
-skinparam monochrome true
-skinparam defaultFontName Arial
+@startuml BotService Sequence Diagram
 
-[*] --> UNAUTHORIZED : Начальное состояние
+actor User
+participant "Telegram API" as Telegram
+participant "BotService" as Bot
+participant "UpdateDispatcher" as Dispatcher
+participant "StartMessageHandler" as StartHandler
+participant "CredentialsMessageHandler" as CredHandler
+participant "CompetenciesMessageHandler" as CompHandler
+participant "DomainMessageHandler" as DomainHandler
+participant "TopicSelectionCallbackHandler" as TopicHandler
+participant "SupervisorSelectionHandler" as SupHandler
+participant "ConfirmSupervisorCallbackHandler" as ConfirmSupHandler
+participant "UserStateService" as StateService
+participant "AuthServiceClient" as AuthService
+participant "UsersServiceClient" as UserService
+participant "TopicServiceClient" as TopicService
+participant "MustacheTemplateService" as TemplateService
 
-UNAUTHORIZED --> AWAITING_CREDENTIALS : /start
-AWAITING_CREDENTIALS --> PROCESSING_AUTH : Получены credentials
+User -> Telegram: /start
+Telegram -> Bot: Update (message: /start)
+Bot -> Dispatcher: dispatch(Update)
+Dispatcher -> StartHandler: handle(Message)
+StartHandler -> StateService: clear(chatId)
+StartHandler -> TemplateService: render("intro_message.mustache")
+TemplateService --> StartHandler: introMessage
+StartHandler -> Bot: sendMessage(chatId, introMessage, MARKDOWN)
+StartHandler -> TemplateService: render("request_credentials.mustache")
+TemplateService --> StartHandler: requestCredentialsMessage
+StartHandler -> Bot: sendMessage(chatId, requestCredentialsMessage, MARKDOWN)
+StartHandler -> StateService: setState(chatId, AWAITING_CREDENTIALS)
+Bot -> Telegram: Send messages to user
+User -> Telegram: login password
+Telegram -> Bot: Update (message: login password)
+Bot -> Dispatcher: dispatch(Update)
+Dispatcher -> CredHandler: handle(Message)
+CredHandler -> AuthService: authenticate(login, password)
+AuthService --> CredHandler: AuthResponse
+CredHandler -> StateService: saveAuth(chatId, AuthResponse)
+CredHandler -> StateService: setState(chatId, AWAITING_COMPETENCIES)
+CredHandler -> UserService: getStudentDetails(guid)
+UserService --> CredHandler: StudentDetails
+CredHandler -> TemplateService: render("user_info.mustache")
+TemplateService --> CredHandler: userInfoMessage
+CredHandler -> Bot: sendMessage(chatId, userInfoMessage, MARKDOWN)
+CredHandler -> TemplateService: render("request_competencies.mustache")
+TemplateService --> CredHandler: competenciesMessage
+CredHandler -> Bot: sendMessage(chatId, competenciesMessage, MARKDOWN)
+Bot -> Telegram: Send user info and request competencies
+User -> Telegram: competencies
+Telegram -> Bot: Update (message: competencies)
+Bot -> Dispatcher: dispatch(Update)
+Dispatcher -> CompHandler: handle(Message)
+CompHandler -> StateService: getSessionData(chatId)
+CompHandler -> StateService: setCompetencies(competencies)
+CompHandler -> Bot: sendMessageWithKeyboard(chatId, "Enter domains", HTML, keyboard)
+CompHandler -> StateService: setState(chatId, AWAITING_DOMAIN)
+Bot -> Telegram: Send domain request with keyboard
+User -> Telegram: domains
+Telegram -> Bot: Update (message: domains)
+Bot -> Dispatcher: dispatch(Update)
+Dispatcher -> DomainHandler: handle(Message)
+DomainHandler -> StateService: getSessionData(chatId)
+DomainHandler -> StateService: setDomains(domains)
+DomainHandler -> Bot: sendMessage(chatId, summaryMessage, HTML)
+DomainHandler -> Bot: sendMessage(chatId, "Generating topics...", NONE)
+DomainHandler -> TopicService: generateTopics(studentGuid, request)
+TopicService --> DomainHandler: GeneratedTopics
+DomainHandler -> StateService: setGeneratedTopics(topics)
+DomainHandler -> Bot: sendMessageWithKeyboard(chatId, topicsMessage, MARKDOWN, topicKeyboard)
+DomainHandler -> StateService: setState(chatId, TOPIC_SELECTION)
+Bot -> Telegram: Send topic selection message
+User -> Telegram: Callback (select_topic)
+Telegram -> Bot: Update (callback: select_)
+Bot -> Dispatcher: dispatch(Update)
+Dispatcher -> TopicHandler: handleCallback(CallbackQuery)
+TopicHandler -> StateService: getSessionData(chatId)
+TopicHandler -> TopicService: getLastTenTopics(studentGuid)
+TopicService --> TopicHandler: LastTenTopics
+TopicHandler -> StateService: setSelectedTopic(selectedTopic)
+TopicHandler -> Bot: sendMessageWithKeyboard(chatId, confirmationMessage, MARKDOWN, confirmKeyboard)
+TopicHandler -> StateService: setState(chatId, TOPIC_CONFIRMATION)
+Bot -> Telegram: Send topic confirmation
+User -> Telegram: Callback (confirm_select_)
+Telegram -> Bot: Update (callback: confirm_select_)
+Bot -> Dispatcher: dispatch(Update)
+Dispatcher -> ConfirmTopicCallbackHandler: handleCallback(CallbackQuery)
+ConfirmTopicCallbackHandler -> StateService: getSessionData(chatId)
+ConfirmTopicCallbackHandler -> StateService: setSelectedTopic(topic)
+ConfirmTopicCallbackHandler -> Bot: sendMessage(chatId, "Select supervisor", NONE)
+ConfirmTopicCallbackHandler -> StateService: setState(chatId, AWAITING_SUPERVISOR)
+Bot -> Telegram: Send supervisor selection request
+User -> Telegram: supervisor FIO
+Telegram -> Bot: Update (message: supervisor FIO)
+Bot -> Dispatcher: dispatch(Update)
+Dispatcher -> SupHandler: handle(Message)
+SupHandler -> UserService: searchEmployeesByFullName(FIO)
+UserService --> SupHandler: Employee
+SupHandler -> Bot: sendMessageWithKeyboard(chatId, employeeInfo, MARKDOWN, keyboard)
+Bot -> Telegram: Send supervisor info
+User -> Telegram: Callback (select_supervisor_)
+Telegram -> Bot: Update (callback: select_supervisor_)
+Bot -> Dispatcher: dispatch(Update)
+Dispatcher -> SupervisorSelectionCallbackHandler: handleCallback(CallbackQuery)
+SupervisorSelectionCallbackHandler -> UserService: getEmployeeById(guid)
+UserService --> SupervisorSelectionCallbackHandler: Employee
+SupervisorSelectionCallbackHandler -> StateService: setSupervisor(employee)
+SupervisorSelectionCallbackHandler -> Bot: sendMessageWithKeyboard(chatId, confirmationMessage, MARKDOWN, confirmKeyboard)
+SupervisorSelectionCallbackHandler -> StateService: setState(chatId, SUPERVISOR_CONFIRMATION)
+Bot -> Telegram: Send supervisor confirmation
+User -> Telegram: Callback (confirm_supervisor)
+Telegram -> Bot: Update (callback: confirm_supervisor)
+Bot -> Dispatcher: dispatch(Update)
+Dispatcher -> ConfirmSupHandler: handleCallback(CallbackQuery)
+ConfirmSupHandler -> StateService: getSessionData(chatId)
+ConfirmSupHandler -> TopicService: selectTopic(studentGuid, topicId, supervisorGuid)
+TopicService --> ConfirmSupHandler: Success
+ConfirmSupHandler -> Bot: sendMessage(chatId, "Topic selected", NONE)
+ConfirmSupHandler -> StateService: setState(chatId, COMPLETED)
+Bot -> Telegram: Send final confirmation
 
-PROCESSING_AUTH --> AUTHORIZED : Успешная авторизация
-PROCESSING_AUTH --> AWAITING_CREDENTIALS : Ошибка авторизации
-
-AUTHORIZED --> ASK_COMPETENCIES : Переход к сбору данных
-ASK_COMPETENCIES --> [*] : Завершение диалога
-
-note right of AWAITING_CREDENTIALS
-  Бот ожидает ввода
-  логина и пароля
-  от пользователя
-end note
-
-note left of AUTHORIZED
-  Пользователь аутентифицирован,
-  JWT сохранен,
-  можно запрашивать доп. данные
-end note
 @enduml

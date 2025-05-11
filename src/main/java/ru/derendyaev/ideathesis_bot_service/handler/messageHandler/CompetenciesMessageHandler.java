@@ -35,7 +35,6 @@ public class CompetenciesMessageHandler implements MessageHandler {
         UserSessionData session = botServiceDelegate.getUserStateService().getSessionData(chatId);
         session.setCompetencies(botServiceDelegate.splitList(text));
 
-        // Проверяем, есть ли предыдущие домены, и добавляем кнопку
         InlineKeyboardMarkup keyboard = null;
         if (session.getDomains() != null && !session.getDomains().isEmpty()) {
             String previousDomains = String.join(", ", session.getDomains());

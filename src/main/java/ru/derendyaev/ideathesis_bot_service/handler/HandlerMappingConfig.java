@@ -17,7 +17,7 @@ public class HandlerMappingConfig {
     private List<MessageHandler> messageHandlers;
 
     @Bean
-    public Map<BotState, MessageHandler> handlerMapping() {
+    public Map<BotState, MessageHandler> messageHandlerMapping() {
         Map<BotState, MessageHandler> mapping = new HashMap<>();
         for (MessageHandler handler : messageHandlers) {
             if (handler instanceof StartMessageHandler) {

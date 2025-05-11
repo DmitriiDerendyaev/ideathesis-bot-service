@@ -30,6 +30,8 @@ public class HandlerMappingConfig {
                 mapping.put(BotState.AWAITING_DOMAIN, handler);
             } else if (handler instanceof SupervisorSelectionHandler) {
                 mapping.put(BotState.AWAITING_SUPERVISOR, handler);
+            } else if (handler instanceof PendingTopicsMessageHandler) {
+                mapping.put(BotState.PENDING_TOPICS, handler);
             }
         }
         return mapping;

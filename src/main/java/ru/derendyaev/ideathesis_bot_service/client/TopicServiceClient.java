@@ -75,4 +75,27 @@ public class TopicServiceClient {
                         response -> Mono.error(new ServiceUnavailableException("topic-service недоступен")))
                 .bodyToMono(Void.class);
     }
+
+    public Mono<List<StudentTopicSelectionDto>> getActiveTopicsForStudent(String studentGuid) {
+        return topicWebClient.get()
+                .uri("/api/topics/students/{studentGuid}/topics/active", studentGuid)
+                .retrieve()
+                .onStatus(HttpStatusCode::is4xxClientError,
+                        response -> Mono.error(new BadRequestException("Ошибка получения активных тем")))
+                .onStatus(HttpStatusCode::is5xxServerError,
+                        response -> Mono.error(new ServiceUnavailableException("topic-service недоступен")))
+                .bodyToMono(new ParameterizedTypeReference<List<StudentTopicSelectionDto>>() {});
+    }
+
+    public Mono<Void> withdrawTopic(Long topicId, String studentGuid) {
+        return topicWebClient.post()
+                .uri("/api/topics/topics/{topicId}/withdraw", topicId)
+                .header("X-Student-Guid", studentGuid)
+                .retrieve()
+                .onStatus(HttpStatusCode::is4xxClientError,
+                        response -> Mono.error(new BadRequestException("Ошибка отзыва заявки")))
+                .onStatus(HttpStatusCode::is5xxServerError,
+                        response -> Mono.error(new ServiceUnavailableException("topic-service недоступен")))
+                .bodyToMono(Void.class);
+    }
 }

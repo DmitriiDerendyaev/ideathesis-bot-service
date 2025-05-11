@@ -9,5 +9,6 @@ public enum BotState {
     TOPIC_CONFIRMATION, // Подтверждение выбора темы
     AWAITING_SUPERVISOR, // Ожидание ввода ФИО преподавателя
     SUPERVISOR_CONFIRMATION,
-    COMPLETED
+    COMPLETED,
+    PENDING_TOPICS
 }

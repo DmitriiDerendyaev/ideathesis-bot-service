@@ -53,7 +53,7 @@ public class UsersServiceClient {
                         response -> Mono.error(new BadRequestException("Сотрудник не найден")))
                 .onStatus(HttpStatusCode::is5xxServerError,
                         response -> Mono.error(new ServiceUnavailableException("user-service недоступен")))
-                .bodyToMono(EmployeeAllDto.class);
+                .bodyToMono(EmployeeAllDto.class).log();
     }
 
     public Mono<List<EmployeeAllDto>> searchEmployeesByFullName(String fullName) {

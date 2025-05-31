@@ -1,0 +1,81 @@
+@startuml Simplified BotService Sequence Diagram
+
+actor User
+participant "Telegram API" as Telegram
+participant "BotService" as Bot
+participant "UserStateService" as StateService
+
+User -> Telegram: /start
+Telegram -> Bot: Update
+Bot -> StateService: clear
+StateService --> Bot:
+Bot -> Telegram: sendMessage
+Telegram --> User: Messages
+Bot -> StateService: setState(AWAITING_CREDENTIALS)
+StateService --> Bot:
+
+User -> Telegram: login password
+Telegram -> Bot: Update
+Bot -> StateService: setState(AWAITING_COMPETENCIES)
+StateService --> Bot:
+Bot -> Telegram: sendMessage
+Telegram --> User: Messages
+
+User -> Telegram: competencies
+Telegram -> Bot: Update
+Bot -> StateService: setCompetencies
+StateService --> Bot:
+Bot -> Telegram: sendMessage
+Telegram --> User: Message
+Bot -> StateService: setState(AWAITING_DOMAIN)
+StateService --> Bot:
+
+User -> Telegram: domains
+Telegram -> Bot: Update
+Bot -> StateService: setDomains
+StateService --> Bot:
+Bot -> Telegram: sendMessage
+Telegram --> User: Message
+Bot -> StateService: setState(TOPIC_SELECTION)
+StateService --> Bot:
+
+User -> Telegram: select_topic
+Telegram -> Bot: Update
+Bot -> StateService: setSelectedTopic
+StateService --> Bot:
+Bot -> Telegram: sendMessage
+Telegram --> User: Message
+Bot -> StateService: setState(TOPIC_CONFIRMATION)
+StateService --> Bot:
+
+User -> Telegram: confirm_select
+Telegram -> Bot: Update
+Bot -> StateService: setState(AWAITING_SUPERVISOR)
+StateService --> Bot:
+Bot -> Telegram: sendMessage
+Telegram --> User: Message
+
+User -> Telegram: supervisor FIO
+Telegram -> Bot: Update
+Bot -> Telegram: sendMessage
+Telegram --> User: Message
+Bot -> StateService: setState(SUPERVISOR_CONFIRMATION)
+StateService --> Bot:
+
+User -> Telegram: select_supervisor
+Telegram -> Bot: Update
+Bot -> StateService: setSupervisor
+StateService --> Bot:
+Bot -> Telegram: sendMessage
+Telegram --> User: Message
+Bot -> StateService: setState(SUPERVISOR_CONFIRMATION)
+StateService --> Bot:
+
+User -> Telegram: confirm_supervisor
+Telegram -> Bot: Update
+Bot -> StateService: setState(COMPLETED)
+StateService --> Bot:
+Bot -> Telegram: sendMessage
+Telegram --> User: Final confirmation
+
+@enduml

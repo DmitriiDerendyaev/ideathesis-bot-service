@@ -17,7 +17,7 @@ public class HandlerMappingConfig {
     private List<MessageHandler> messageHandlers;
 
     @Bean
-    public Map<BotState, MessageHandler> handlerMapping() {
+    public Map<BotState, MessageHandler> messageHandlerMapping() {
         Map<BotState, MessageHandler> mapping = new HashMap<>();
         for (MessageHandler handler : messageHandlers) {
             if (handler instanceof StartMessageHandler) {
@@ -30,6 +30,8 @@ public class HandlerMappingConfig {
                 mapping.put(BotState.AWAITING_DOMAIN, handler);
             } else if (handler instanceof SupervisorSelectionHandler) {
                 mapping.put(BotState.AWAITING_SUPERVISOR, handler);
+            } else if (handler instanceof PendingTopicsMessageHandler) {
+                mapping.put(BotState.PENDING_TOPICS, handler);
             }
         }
         return mapping;

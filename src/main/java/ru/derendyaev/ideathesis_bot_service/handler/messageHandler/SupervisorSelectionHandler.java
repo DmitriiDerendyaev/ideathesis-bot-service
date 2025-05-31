@@ -1,6 +1,7 @@
 package ru.derendyaev.ideathesis_bot_service.handler.messageHandler;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.objects.Message;
@@ -22,8 +23,9 @@ public class SupervisorSelectionHandler implements MessageHandler {
 
     private final BotServiceDelegate botServiceDelegate;
     private final UsersServiceClient usersServiceClient;
-    private final MessageUtils messageUtils; // Добавляем MessageUtils
+    private final MessageUtils messageUtils;
 
+    @Autowired
     public SupervisorSelectionHandler(@Lazy BotServiceDelegate botServiceDelegate, UsersServiceClient usersServiceClient, MessageUtils messageUtils) {
         this.botServiceDelegate = botServiceDelegate;
         this.usersServiceClient = usersServiceClient;
@@ -34,8 +36,6 @@ public class SupervisorSelectionHandler implements MessageHandler {
     public void handle(Message msg) {
         long chatId = msg.getChatId();
         String text = msg.getText().trim();
-
-        UserSessionData session = botServiceDelegate.getUserStateService().getSessionData(chatId);
 
         usersServiceClient.searchEmployeesByFullName(text)
                 .doOnNext(employees -> {
@@ -49,7 +49,7 @@ public class SupervisorSelectionHandler implements MessageHandler {
                                         .build()
                         );
                     } else {
-                        EmployeeAllDto employee = employees.get(0); // Берём первого найденного
+                        EmployeeAllDto employee = employees.get(0);
                         String employeeInfo = String.format(
                                 "*Преподаватель:*\nФИО: %s\nДолжности: %s\nКафедры: %s",
                                 messageUtils.escapeMarkdownV2(employee.getFullName()),

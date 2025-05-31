@@ -1,28 +1,91 @@
-@startuml
-title Диаграмма состояний UserState (авторизация)
-skinparam monochrome true
-skinparam defaultFontName Arial
+@startuml Simplified BotService Sequence Diagram
 
-[*] --> UNAUTHORIZED : Начальное состояние
+actor User
+participant "Telegram API" as Telegram
+participant "BotService" as Bot
+participant "UpdateDispatcher" as Dispatcher
+participant "StartMessageHandler" as StartHandler
+participant "CredentialsMessageHandler" as CredHandler
+participant "CompetenciesMessageHandler" as CompHandler
+participant "DomainMessageHandler" as DomainHandler
+participant "TopicSelectionCallbackHandler" as TopicHandler
+participant "SupervisorSelectionHandler" as SupHandler
+participant "ConfirmSupervisorCallbackHandler" as ConfirmSupHandler
+participant "UserStateService" as StateService
 
-UNAUTHORIZED --> AWAITING_CREDENTIALS : /start
-AWAITING_CREDENTIALS --> PROCESSING_AUTH : Получены credentials
+User -> Telegram: /start
+Telegram -> Bot: Update
+Bot -> Dispatcher: dispatch
+Dispatcher -> StartHandler: handle
+StartHandler -> StateService: clear
+StartHandler -> Bot: sendMessage
+StartHandler -> StateService: setState(AWAITING_CREDENTIALS)
+Bot -> Telegram: Send messages
 
-PROCESSING_AUTH --> AUTHORIZED : Успешная авторизация
-PROCESSING_AUTH --> AWAITING_CREDENTIALS : Ошибка авторизации
+User -> Telegram: login password
+Telegram -> Bot: Update
+Bot -> Dispatcher: dispatch
+Dispatcher -> CredHandler: handle
+CredHandler -> StateService: setState(AWAITING_COMPETENCIES)
+CredHandler -> Bot: sendMessage
+Bot -> Telegram: Send messages
 
-AUTHORIZED --> ASK_COMPETENCIES : Переход к сбору данных
-ASK_COMPETENCIES --> [*] : Завершение диалога
+User -> Telegram: competencies
+Telegram -> Bot: Update
+Bot -> Dispatcher: dispatch
+Dispatcher -> CompHandler: handle
+CompHandler -> StateService: setCompetencies
+CompHandler -> Bot: sendMessage
+CompHandler -> StateService: setState(AWAITING_DOMAIN)
+Bot -> Telegram: Send message
 
-note right of AWAITING_CREDENTIALS
-  Бот ожидает ввода
-  логина и пароля
-  от пользователя
-end note
+User -> Telegram: domains
+Telegram -> Bot: Update
+Bot -> Dispatcher: dispatch
+Dispatcher -> DomainHandler: handle
+DomainHandler -> StateService: setDomains
+DomainHandler -> Bot: sendMessage
+DomainHandler -> StateService: setState(TOPIC_SELECTION)
+Bot -> Telegram: Send message
 
-note left of AUTHORIZED
-  Пользователь аутентифицирован,
-  JWT сохранен,
-  можно запрашивать доп. данные
-end note
+User -> Telegram: select_topic
+Telegram -> Bot: Update
+Bot -> Dispatcher: dispatch
+Dispatcher -> TopicHandler: handle
+TopicHandler -> StateService: setSelectedTopic
+TopicHandler -> Bot: sendMessage
+TopicHandler -> StateService: setState(TOPIC_CONFIRMATION)
+Bot -> Telegram: Send message
+
+User -> Telegram: confirm_select
+Telegram -> Bot: Update
+Bot -> Dispatcher: dispatch
+Dispatcher -> ConfirmTopicCallbackHandler: handle
+ConfirmTopicCallbackHandler -> StateService: setState(AWAITING_SUPERVISOR)
+Bot -> Telegram: Send message
+
+User -> Telegram: supervisor FIO
+Telegram -> Bot: Update
+Bot -> Dispatcher: dispatch
+Dispatcher -> SupHandler: handle
+SupHandler -> Bot: sendMessage
+Bot -> Telegram: Send message
+
+User -> Telegram: select_supervisor
+Telegram -> Bot: Update
+Bot -> Dispatcher: dispatch
+Dispatcher -> SupervisorSelectionCallbackHandler: handle
+SupervisorSelectionCallbackHandler -> StateService: setSupervisor
+SupervisorSelectionCallbackHandler -> Bot: sendMessage
+SupervisorSelectionCallbackHandler -> StateService: setState(SUPERVISOR_CONFIRMATION)
+Bot -> Telegram: Send message
+
+User -> Telegram: confirm_supervisor
+Telegram -> Bot: Update
+Bot -> Dispatcher: dispatch
+Dispatcher -> ConfirmSupHandler: handle
+ConfirmSupHandler -> StateService: setState(COMPLETED)
+ConfirmSupHandler -> Bot: sendMessage
+Bot -> Telegram: Send final confirmation
+
 @enduml

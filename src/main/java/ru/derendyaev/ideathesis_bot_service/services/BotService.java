@@ -2,22 +2,18 @@ package ru.derendyaev.ideathesis_bot_service.services;
 
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.TelegramBotsApi;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
-import org.telegram.telegrambots.meta.api.objects.CallbackQuery;
-import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import org.telegram.telegrambots.updatesreceivers.DefaultBotSession;
-import ru.derendyaev.ideathesis_bot_service.client.AuthServiceClient;
-import ru.derendyaev.ideathesis_bot_service.handler.CallbackHandler;
-import ru.derendyaev.ideathesis_bot_service.handler.MessageHandler;
-import ru.derendyaev.ideathesis_bot_service.models.BotState;
+import ru.derendyaev.ideathesis_bot_service.handler.UpdateDispatcher;
 import ru.derendyaev.ideathesis_bot_service.models.ParseMode;
 import ru.derendyaev.ideathesis_bot_service.models.user.UserStateService;
 
@@ -30,16 +26,14 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class BotService extends TelegramLongPollingBot implements BotServiceDelegate {
     private final UserStateService stateService;
-    private final AuthServiceClient authClient;
-    private final Map<BotState, MessageHandler> handlers;
-    private final CallbackHandler callbackHandler;
-    private final MessageHandler startMessageHandler;
-    private final MessageHandler logoutMessageHandler;
+    private final UpdateDispatcher updateDispatcher;
 
     @Value("${app.values.bot.token}")
+    @Setter
     private String token;
 
     @Value("${app.values.bot.username}")
+    @Setter
     private String username;
 
     @PostConstruct
@@ -50,41 +44,7 @@ public class BotService extends TelegramLongPollingBot implements BotServiceDele
 
     @Override
     public void onUpdateReceived(Update update) {
-        if (update.hasMessage() && update.getMessage().hasText()) {
-            Message msg = update.getMessage();
-            String text = msg.getText().trim();
-
-            // Обрабатываем команды /start и /logout независимо от состояния
-            if ("/start".equals(text)) {
-                startMessageHandler.handle(msg);
-            } else if ("/logout".equals(text)) {
-                logoutMessageHandler.handle(msg);
-            } else {
-                handleMessage(msg);
-            }
-        } else if (update.hasCallbackQuery()) {
-            handleCallbackQuery(update.getCallbackQuery());
-        }
-    }
-
-    private void handleMessage(Message msg) {
-        long chatId = msg.getChatId();
-        BotState state = stateService.getState(chatId);
-
-        MessageHandler handler = handlers.get(state);
-        if (handler != null) {
-            handler.handle(msg);
-        } else {
-            log.warn("No handler found for state: {}", state);
-        }
-    }
-
-    private void handleCallbackQuery(CallbackQuery callbackQuery) {
-        callbackHandler.handleCallback(callbackQuery);
-    }
-
-    public void sendMessage(long chatId, String text) {
-        sendMessage(chatId, text, ParseMode.NONE);
+        updateDispatcher.dispatch(update);
     }
 
     @Override
@@ -119,6 +79,7 @@ public class BotService extends TelegramLongPollingBot implements BotServiceDele
         return stateService;
     }
 
+    @Override
     public List<String> splitList(String text) {
         return Arrays.stream(text.split(","))
                 .map(String::trim)

@@ -60,7 +60,7 @@ public class CredentialsMessageHandler implements MessageHandler {
             return;
         }
 
-        authServiceClient.authenticate(parts[0], parts[1])
+        authServiceClient.authenticateV2(parts[0], parts[1]) //TODO: switched to selfAuth authenticate -> authenticateV2
                 .doOnNext(resp -> {
                     log.info("Authenticated: {}", resp.getUser());
                     botServiceDelegate.getUserStateService().saveAuth(chatId, resp);

@@ -1,0 +1,67 @@
+@startuml part1_registration
+
+skinparam monochrome true
+skinparam dpi 300
+skinparam defaultFontSize 22
+skinparam ParticipantFontSize 24
+skinparam nodesep 70
+skinparam ranksep 120
+skinparam LineThickness 3
+
+skinparam activity {
+  BorderColor Black
+  BackgroundColor White
+  FontColor Black
+}
+
+|User|
+|BotService|
+
+start
+
+|User|
+:Send /start command;
+
+|BotService|
+:Receive /start command;
+->|UserStateService|
+:Reset user state;
+:Set state: AWAITING_CREDENTIALS;
+->|BotService|
+:Send welcome message;
+
+|User|
+:Send login & password;
+
+|BotService|
+:Receive credentials;
+->|UserStateService|
+:Set state: AWAITING_COMPETENCIES;
+->|BotService|
+:Request competencies;
+
+|User|
+:Send competencies;
+
+|BotService|
+:Receive competencies;
+->|UserStateService|
+:Save competencies;
+:Set state: AWAITING_DOMAIN;
+->|BotService|
+:Request domain list;
+
+|User|
+:Send selected domains;
+
+|BotService|
+:Receive domains;
+->|UserStateService|
+:Save domains;
+:Set state: TOPIC_SELECTION;
+->|BotService|
+:Request topic selection;
+
+stop
+
+@enduml

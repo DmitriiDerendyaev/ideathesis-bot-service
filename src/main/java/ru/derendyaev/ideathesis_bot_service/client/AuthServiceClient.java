@@ -8,6 +8,7 @@ import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
+import ru.derendyaev.ideathesis_bot_service.dto.auth.AuthRequestDtoV2;
 import ru.derendyaev.ideathesis_bot_service.exceptions.ServiceUnavailableException;
 import ru.derendyaev.ideathesis_bot_service.exceptions.UnauthorizedException;
 import ru.derendyaev.ideathesis_bot_service.dto.auth.AuthRequestDto;
@@ -28,6 +29,27 @@ public class AuthServiceClient {
         return webClient.post()
                 .uri("/api/v1/bot-login")
                 .bodyValue(new AuthRequestDto(login, password))
+                .retrieve()
+                .onStatus(HttpStatusCode::is5xxServerError,
+                        response -> Mono.error(new ServiceUnavailableException("Service Unavailable")))
+                .onStatus(HttpStatusCode::is4xxClientError,
+                        response -> Mono.error(new UnauthorizedException("Unauthorized")))
+                .bodyToMono(String.class)
+                .doOnNext(body -> log.info("Raw auth response: {}", body))
+                .map(json -> {
+                    ObjectMapper mapper = new ObjectMapper();
+                    try {
+                        return mapper.readValue(json, AuthResponse.class);
+                    } catch (JsonProcessingException e) {
+                        throw new RuntimeException(e);
+                    }
+                });
+    }
+
+    public Mono<AuthResponse> authenticateV2(String login, String password) {
+        return webClient.post()
+                .uri("/api/v2/login")
+                .bodyValue(new AuthRequestDtoV2(login, password))
                 .retrieve()
                 .onStatus(HttpStatusCode::is5xxServerError,
                         response -> Mono.error(new ServiceUnavailableException("Service Unavailable")))

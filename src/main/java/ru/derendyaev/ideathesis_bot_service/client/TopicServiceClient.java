@@ -171,4 +171,28 @@ public class TopicServiceClient {
                         response -> Mono.error(new ServiceUnavailableException("topic-service недоступен")))
                 .bodyToMono(new ParameterizedTypeReference<List<PendingTopicSelectionDto>>() {});
     }
+
+    public Mono<List<TopicCommentDto>> getCommentsForTopic(Long topicId) {
+        return topicWebClient.get()
+                .uri("/api/topics/{topicId}/comments", topicId)
+                .retrieve()
+                .onStatus(HttpStatusCode::is4xxClientError,
+                        response -> Mono.error(new BadRequestException("Ошибка получения комментариев")))
+                .onStatus(HttpStatusCode::is5xxServerError,
+                        response -> Mono.error(new ServiceUnavailableException("topic-service недоступен")))
+                .bodyToMono(new ParameterizedTypeReference<List<TopicCommentDto>>() {});
+    }
+
+    public Mono<TopicCommentDto> addComment(Long topicId, String studentGuid, AddCommentRequest request) {
+        return topicWebClient.post()
+                .uri("/api/topics/{topicId}/comments", topicId)
+                .header("X-Student-Guid", studentGuid)
+                .bodyValue(request)
+                .retrieve()
+                .onStatus(HttpStatusCode::is4xxClientError,
+                        response -> Mono.error(new BadRequestException("Ошибка добавления комментария")))
+                .onStatus(HttpStatusCode::is5xxServerError,
+                        response -> Mono.error(new ServiceUnavailableException("topic-service недоступен")))
+                .bodyToMono(TopicCommentDto.class);
+    }
 }

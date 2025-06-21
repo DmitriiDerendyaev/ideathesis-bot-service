@@ -4,6 +4,7 @@ import org.springframework.context.annotation.Lazy;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 import ru.derendyaev.ideathesis_bot_service.dto.topic.StudentTopicSelectionDto;
+import ru.derendyaev.ideathesis_bot_service.dto.topic.TopicCommentDto;
 import ru.derendyaev.ideathesis_bot_service.handler.callbackData.CallbackHandler;
 
 import lombok.extern.slf4j.Slf4j;
@@ -19,6 +20,7 @@ import ru.derendyaev.ideathesis_bot_service.services.BotServiceDelegate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Component
@@ -55,39 +57,63 @@ public class CheckTopicStatusHandler implements CallbackHandler {
                             .filter(t -> t.getTopic().getId().equals(topicId))
                             .findFirst()
                             .orElseThrow(() -> new IllegalStateException("Topic not found"));
+                    botServiceDelegate.getUserStateService().getSessionData(chatId).setSelectedTopic(topic.getTopic());
                     log.info("Found topic: {} (status: {}, supervisor GUID: {})",
                             topic.getTopic().getTitle(), topic.getTopic().getStatus().getDisplayName(), topic.getSupervisorGuid());
 
-                    usersServiceClient.getEmployeeById(topic.getSupervisorGuid().toString())
-                            .doOnNext(employee -> {
-                                log.info("Successfully retrieved supervisor: {}", employee.getFullName());
-                                String message = String.format(
-                                        "Тема: %s\n- Статус: %s\n- Руководитель: %s\n- Описание: %s",
-                                        topic.getTopic().getTitle(),
-                                        topic.getTopic().getStatus(),
-                                        employee.getFullName(),
-                                        topic.getTopic().getDescription()
-                                );
+                    topicServiceClient.getCommentsForTopic(topicId)
+                            .doOnNext(comments -> {
+                                List<TopicCommentDto> teacherComments = comments.stream()
+                                        .filter(c -> "TEACHER".equals(c.getAuthorType()))
+                                        .sorted((c1, c2) -> c2.getCreatedAt().compareTo(c1.getCreatedAt()))
+                                        .collect(Collectors.toList());
 
-                                List<List<InlineKeyboardButton>> rows = new ArrayList<>();
-                                List<InlineKeyboardButton> row = new ArrayList<>();
-                                row.add(InlineKeyboardButton.builder()
-                                        .text("Написать преподавателю")
-                                        .callbackData("contact_supervisor_" + topicId)
-                                        .build());
-                                row.add(InlineKeyboardButton.builder()
-                                        .text("Отозвать заявку")
-                                        .callbackData("withdraw_" + topicId)
-                                        .build());
-                                rows.add(row);
+                                String lastTeacherComment = teacherComments.isEmpty()
+                                        ? "Нет комментариев от преподавателя"
+                                        : "Последний комментарий преподавателя:\n" + teacherComments.get(0).getCommentText();
 
-                                InlineKeyboardMarkup keyboard = InlineKeyboardMarkup.builder().keyboard(rows).build();
-                                botServiceDelegate.sendMessageWithKeyboard(chatId, message, ParseMode.NONE, keyboard);
+                                usersServiceClient.getEmployeeById(topic.getSupervisorGuid().toString())
+                                        .doOnNext(employee -> {
+                                            log.info("Successfully retrieved supervisor: {}", employee.getFullName());
+                                            String message = String.format(
+                                                    "Тема: %s\n- Статус: %s\n- Руководитель: %s\n- Описание: %s\n\n%s",
+                                                    topic.getTopic().getTitle(),
+                                                    topic.getTopic().getStatus(),
+                                                    employee.getFullName(),
+                                                    topic.getTopic().getDescription(),
+                                                    lastTeacherComment
+                                            );
+
+                                            List<List<InlineKeyboardButton>> rows = new ArrayList<>();
+                                            List<InlineKeyboardButton> row = new ArrayList<>();
+                                            row.add(InlineKeyboardButton.builder()
+                                                    .text("Написать преподавателю")
+                                                    .callbackData("contact_supervisor_" + topicId)
+                                                    .build());
+                                            row.add(InlineKeyboardButton.builder()
+                                                    .text("Отозвать заявку")
+                                                    .callbackData("withdraw_" + topicId)
+                                                    .build());
+                                            row.add(InlineKeyboardButton.builder()
+                                                    .text("Добавить комментарий")
+                                                    .callbackData("add_comment_" + topicId)
+                                                    .build());
+                                            rows.add(row);
+
+                                            InlineKeyboardMarkup keyboard = InlineKeyboardMarkup.builder().keyboard(rows).build();
+                                            botServiceDelegate.sendMessageWithKeyboard(chatId, message, ParseMode.NONE, keyboard);
+                                        })
+                                        .doOnError(ex -> {
+                                            log.error("Ошибка при получении данных преподавателя для GUID {}: {}: {}",
+                                                    topic.getSupervisorGuid(), ex.getClass().getName(), ex.getMessage(), ex);
+                                            botServiceDelegate.sendMessage(chatId, "Ошибка при получении данных преподавателя.", ParseMode.NONE);
+                                        })
+                                        .subscribe();
                             })
                             .doOnError(ex -> {
-                                log.error("Ошибка при получении данных преподавателя для GUID {}: {}: {}",
-                                        topic.getSupervisorGuid(), ex.getClass().getName(), ex.getMessage(), ex);
-                                botServiceDelegate.sendMessage(chatId, "Ошибка при получении данных преподавателя.", ParseMode.NONE);
+                                log.error("Ошибка при получении комментариев для темы с ID {}: {}: {}",
+                                        topicId, ex.getClass().getName(), ex.getMessage(), ex);
+                                botServiceDelegate.sendMessage(chatId, "Ошибка при получении комментариев.", ParseMode.NONE);
                             })
                             .subscribe();
                 })

@@ -3,6 +3,7 @@ package ru.derendyaev.ideathesis_bot_service.handler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import ru.derendyaev.ideathesis_bot_service.handler.callbackData.AddCommentMessageHandler;
 import ru.derendyaev.ideathesis_bot_service.handler.messageHandler.*;
 import ru.derendyaev.ideathesis_bot_service.models.BotState;
 
@@ -32,7 +33,9 @@ public class HandlerMappingConfig {
                 mapping.put(BotState.AWAITING_SUPERVISOR, handler);
             } else if (handler instanceof PendingTopicsMessageHandler) {
                 mapping.put(BotState.PENDING_TOPICS, handler);
-            }
+            } else if (handler instanceof AddCommentMessageHandler) {
+            mapping.put(BotState.AWAITING_COMMENT, handler);
+        }
         }
         return mapping;
     }

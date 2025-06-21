@@ -10,5 +10,7 @@ public enum BotState {
     AWAITING_SUPERVISOR, // Ожидание ввода ФИО преподавателя
     SUPERVISOR_CONFIRMATION,
     COMPLETED,
-    PENDING_TOPICS
+    PENDING_TOPICS,
+
+    AWAITING_COMMENT
 }
